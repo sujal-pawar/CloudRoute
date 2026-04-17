@@ -307,7 +307,7 @@ function generateUsageMetrics(profile: UsageProfile, monthlyCost: number, random
       avgMemoryPercent: round2(avgMemoryPercent),
       avgNetworkMbps: round3(avgNetworkMbps),
       avgDiskIops: round2(avgDiskIops),
-      peakHours: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+      peakHours: [9, 10, 11, 12, 13, 14, 17, 18, 20],
       lastActiveAt,
       dailyUsage,
     };
