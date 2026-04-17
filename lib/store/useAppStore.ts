@@ -4,7 +4,7 @@ import { create } from "zustand"
 
 import type { AlertEvent } from "@/lib/types"
 
-type TeamFilter =
+export type TeamFilter =
   | "all-teams"
   | "platform"
   | "backend"

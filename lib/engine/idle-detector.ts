@@ -76,7 +76,9 @@ function analyzeResource(resource: CloudResource): IdleResource | null {
         ? resource.monthlyCost * 0.65
         : resource.monthlyCost * 0.45;
 
-  const idleDays = Math.max(idleDaysSinceActive, lowNetworkStreak, lambdaIdleDays);
+  const idleDays = idleDaysSinceActive > 0
+    ? idleDaysSinceActive
+    : Math.max(lowNetworkStreak, lambdaIdleDays);
   const confidence = idleSignalCount >= 2 ? 95 : 75;
 
   return {

@@ -8,6 +8,7 @@ import { IdleResourceTable } from "@/components/idle/IdleResourceTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { IdleResource } from "@/lib/types"
+import { useAppStore, type TeamFilter } from "@/lib/store/useAppStore"
 import { formatCurrency } from "@/lib/utils"
 
 type IdleResponse = {
@@ -27,8 +28,9 @@ export default function IdleResourcesPage() {
 
   const [environment, setEnvironment] = React.useState("all")
   const [resourceType, setResourceType] = React.useState("all")
-  const [team, setTeam] = React.useState("all")
   const [minIdleDays, setMinIdleDays] = React.useState(7)
+  const selectedTeam = useAppStore((state) => state.selectedTeam)
+  const setSelectedTeam = useAppStore((state) => state.setSelectedTeam)
 
   React.useEffect(() => {
     const loadIdleResources = async () => {
@@ -54,12 +56,24 @@ export default function IdleResourcesPage() {
     return resources.filter((item) => {
       const matchesEnvironment = environment === "all" || item.resource.environment === environment
       const matchesType = resourceType === "all" || item.resource.type === resourceType
-      const matchesTeam = team === "all" || item.resource.team === team
+      const matchesTeam = selectedTeam === "all-teams" || item.resource.team === selectedTeam
       const matchesIdleDays = item.idleDays >= minIdleDays
 
       return matchesEnvironment && matchesType && matchesTeam && matchesIdleDays
     })
-  }, [environment, minIdleDays, resourceType, resources, team])
+  }, [environment, minIdleDays, resourceType, resources, selectedTeam])
+
+  const selectedResourceForPanel = React.useMemo(() => {
+    if (!selectedResource) {
+      return null
+    }
+
+    const stillVisible = filteredResources.some(
+      (item) => item.resource.id === selectedResource.resource.resource.id
+    )
+
+    return stillVisible ? selectedResource : null
+  }, [filteredResources, selectedResource])
 
   const totalWaste = filteredResources.reduce((sum, item) => sum + item.monthlySavings, 0)
 
@@ -100,7 +114,12 @@ export default function IdleResourcesPage() {
           </SelectContent>
         </Select>
 
-        <Select value={team} onValueChange={setTeam}>
+        <Select
+          value={selectedTeam === "all-teams" ? "all" : selectedTeam}
+          onValueChange={(value) => {
+            setSelectedTeam(value === "all" ? "all-teams" : (value as TeamFilter))
+          }}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Team" />
           </SelectTrigger>
@@ -124,7 +143,7 @@ export default function IdleResourcesPage() {
             className="w-full"
             type="range"
             min={1}
-            max={30}
+            max={60}
             value={minIdleDays}
             onChange={(event) => setMinIdleDays(Number(event.target.value))}
           />
@@ -153,32 +172,32 @@ export default function IdleResourcesPage() {
           />
 
           <aside className="min-w-0 rounded-xl border border-border/70 bg-card p-4 scrollbar-hidden">
-            {selectedResource ? (
+            {selectedResourceForPanel ? (
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Selected Resource</p>
                   <h2 className="mt-1 text-xl font-semibold">
-                    #{selectedResource.number} {selectedResource.resource.name}
+                    #{selectedResourceForPanel.number} {selectedResourceForPanel.resource.name}
                   </h2>
                   <p className="text-xs uppercase text-muted-foreground">
-                    {selectedResource.resource.type} · {selectedResource.resource.team} · {selectedResource.resource.environment}
+                    {selectedResourceForPanel.resource.type} · {selectedResourceForPanel.resource.team} · {selectedResourceForPanel.resource.environment}
                   </p>
                 </div>
 
                 <div className="grid gap-2 text-sm">
-                  <DetailRow label="Idle Reason" value={selectedResource.resource.idleReason} />
-                  <DetailRow label="Monthly Cost" value={formatCurrency(selectedResource.resource.resource.monthlyCost)} />
-                  <DetailRow label="Potential Savings" value={formatCurrency(selectedResource.resource.monthlySavings)} highlight />
-                  <DetailRow label="Idle Days" value={`${selectedResource.resource.idleDays} days`} />
-                  <DetailRow label="Confidence" value={`${selectedResource.resource.confidence}%`} />
-                  <DetailRow label="Region" value={selectedResource.resource.resource.region} />
+                  <DetailRow label="Idle Reason" value={selectedResourceForPanel.resource.idleReason} />
+                  <DetailRow label="Monthly Cost" value={formatCurrency(selectedResourceForPanel.resource.resource.monthlyCost)} />
+                  <DetailRow label="Potential Savings" value={formatCurrency(selectedResourceForPanel.resource.monthlySavings)} highlight />
+                  <DetailRow label="Idle Days" value={`${selectedResourceForPanel.resource.idleDays} days`} />
+                  <DetailRow label="Confidence" value={`${selectedResourceForPanel.resource.confidence}%`} />
+                  <DetailRow label="Region" value={selectedResourceForPanel.resource.resource.region} />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="capitalize">
-                    {selectedResource.resource.recommendation.replace("-", " ")}
+                    {selectedResourceForPanel.resource.recommendation.replace("-", " ")}
                   </Badge>
-                  <Badge className="bg-emerald-500/15 text-emerald-400">{selectedResource.resource.confidence}% confidence</Badge>
+                  <Badge className="bg-emerald-500/15 text-emerald-400">{selectedResourceForPanel.resource.confidence}% confidence</Badge>
                 </div>
 
                 <Button className="w-full" variant="outline" onClick={() => setSelectedResource(null)}>

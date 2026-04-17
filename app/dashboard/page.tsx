@@ -15,6 +15,7 @@ import { KPICard } from "@/components/dashboard/KPICard"
 import { CostTrendChart } from "@/components/dashboard/CostTrendChart"
 import { CostBreakdownChart } from "@/components/dashboard/CostBreakdownChart"
 import { TeamSpendTable, type TeamSpendRow } from "@/components/dashboard/TeamSpendTable"
+import { useAppStore } from "@/lib/store/useAppStore"
 import type { CloudResource, CostAnomaly, IdleResource, Recommendation, Team } from "@/lib/types"
 import { formatCurrency, formatPercent } from "@/lib/utils"
 
@@ -82,6 +83,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null)
+  const [nowMs, setNowMs] = React.useState(() => Date.now())
+  const selectedTeam = useAppStore((store) => store.selectedTeam)
+  const activeTeam: Team | null = selectedTeam === "all-teams" ? null : selectedTeam
 
   const refreshDashboard = React.useCallback(async () => {
     try {
@@ -181,24 +185,114 @@ export default function DashboardPage() {
     }
   }, [refreshDashboard])
 
+  React.useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const secondsSinceUpdate = React.useMemo(() => {
+    if (!lastUpdated) {
+      return null
+    }
+
+    return Math.max(0, Math.floor((nowMs - lastUpdated.getTime()) / 1000))
+  }, [lastUpdated, nowMs])
+
+  const filteredTrend90d = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.trend90d
+    }
+
+    return state.team90d.map((point) => {
+      const teamCost = point.breakdown[activeTeam] ?? 0
+
+      return {
+        date: point.date,
+        totalCost: teamCost,
+        breakdown: {
+          [activeTeam]: teamCost,
+        },
+      }
+    })
+  }, [activeTeam, state.team90d, state.trend90d])
+
+  const filteredResources = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.resources
+    }
+
+    return state.resources.filter((resource) => resource.team === activeTeam)
+  }, [activeTeam, state.resources])
+
+  const filteredIdleResources = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.idleResources
+    }
+
+    return state.idleResources.filter((item) => item.resource.team === activeTeam)
+  }, [activeTeam, state.idleResources])
+
+  const filteredRecommendations = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.recommendations
+    }
+
+    const teamResourceIds = new Set(filteredResources.map((resource) => resource.id))
+    return state.recommendations.filter((recommendation) => teamResourceIds.has(recommendation.resourceId))
+  }, [activeTeam, filteredResources, state.recommendations])
+
+  const filteredAnomalies = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.anomalies
+    }
+
+    return state.anomalies.filter((anomaly) => anomaly.team === activeTeam)
+  }, [activeTeam, state.anomalies])
+
+  const filteredTeamBreakdown30d = React.useMemo(() => {
+    if (!activeTeam) {
+      return state.breakdownTeam30d
+    }
+
+    return state.breakdownTeam30d.map((point) => {
+      const teamCost = point.breakdown[activeTeam] ?? 0
+
+      return {
+        date: point.date,
+        totalCost: teamCost,
+        breakdown: {
+          [activeTeam]: teamCost,
+        },
+      }
+    })
+  }, [activeTeam, state.breakdownTeam30d])
+
   const kpis = React.useMemo(() => {
-    const currentMonthTotal = sumTail(state.trend90d.map((point) => point.totalCost), 30)
-    const lastMonthTotal = sumWindow(state.trend90d.map((point) => point.totalCost), 30, 60)
+    const currentMonthTotal = sumTail(filteredTrend90d.map((point) => point.totalCost), 30)
+    const lastMonthTotal = sumWindow(filteredTrend90d.map((point) => point.totalCost), 30, 60)
     const monthChangePercent = percentageChange(currentMonthTotal, lastMonthTotal)
 
-    const idleWaste = state.idleResources.reduce((sum, item) => sum + item.monthlySavings, 0)
-    const pendingSavings = state.recommendations
+    const idleWaste = filteredIdleResources.reduce((sum, item) => sum + item.monthlySavings, 0)
+    const pendingSavings = filteredRecommendations
       .filter((recommendation) => recommendation.status === "pending")
       .reduce((sum, recommendation) => sum + recommendation.monthlySavings, 0)
 
     const wasteIdentified = idleWaste + pendingSavings
-    const teamRows = buildTeamRows(
+    const allTeamRows = buildTeamRows(
       state.team90d,
       state.resources,
       state.idleResources,
       state.recommendations,
       state.anomalies
     )
+    const teamRows = activeTeam
+      ? allTeamRows.filter((row) => row.team === activeTeam)
+      : allTeamRows
     const avgOptimizationScore =
       teamRows.length > 0
         ? teamRows.reduce((sum, row) => sum + row.optimizationScore, 0) / teamRows.length
@@ -212,7 +306,17 @@ export default function DashboardPage() {
       avgOptimizationScore,
       teamRows,
     }
-  }, [state])
+  }, [
+    activeTeam,
+    filteredIdleResources,
+    filteredRecommendations,
+    filteredTrend90d,
+    state.anomalies,
+    state.recommendations,
+    state.resources,
+    state.team90d,
+    state.idleResources,
+  ])
 
   const showInitialSkeleton = loading && state.trend90d.length === 0
 
@@ -222,8 +326,13 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold">Cloud Cost Overview</h1>
           <p className="text-sm text-muted-foreground">
-            {lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString()}` : "Loading data..."}
+            {lastUpdated
+              ? `Last updated: ${secondsSinceUpdate}s ago (${lastUpdated.toLocaleTimeString()})`
+              : "Loading data..."}
           </p>
+          {activeTeam ? (
+            <p className="text-xs text-muted-foreground">Viewing team: {activeTeam}</p>
+          ) : null}
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => void refreshDashboard()}>
           <RefreshCcw className="size-4" />
@@ -277,14 +386,14 @@ export default function DashboardPage() {
           </div>
 
           <CostTrendChart
-            data={state.trend90d.map((point) => ({ date: point.date, totalCost: point.totalCost }))}
-            anomalies={state.anomalies}
+            data={filteredTrend90d.map((point) => ({ date: point.date, totalCost: point.totalCost }))}
+            anomalies={filteredAnomalies}
           />
 
           <CostBreakdownChart
-            serviceData={state.breakdownService30d}
-            teamData={state.breakdownTeam30d}
-            environmentData={state.breakdownEnv30d}
+            serviceData={activeTeam ? filteredTeamBreakdown30d : state.breakdownService30d}
+            teamData={filteredTeamBreakdown30d}
+            environmentData={activeTeam ? filteredTeamBreakdown30d : state.breakdownEnv30d}
           />
 
           <TeamSpendTable rows={kpis.teamRows} />
