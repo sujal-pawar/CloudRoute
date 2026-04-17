@@ -7,26 +7,27 @@ import {
 import type { CloudCredentials, CloudResource, CostDataPoint } from "@/lib/types"
 
 // NOTE: This adapter is a provider abstraction stub for hackathon/demo mode.
-// Replace with GCP Cloud Billing + Asset/Compute APIs for production workloads.
+// Replace with GCP SDK/Cloud Billing calls when production credentials are available.
 export async function fetchGCPResources(credentials: CloudCredentials): Promise<CloudResource[]> {
-  const projectId = (credentials.projectId ?? "gcp-project").trim().toLowerCase()
-  const seed = hashString(`${projectId}:${credentials.label ?? "gcp"}`)
+  const projectId = credentials.projectId?.trim() || "gcp-project"
+  const seed = hashString(`${projectId}:${credentials.label ?? "default"}`)
+  const projectHint = projectId.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(-24)
 
   return RESOURCES.map((resource, index) => {
-    const multiplier = 0.72 + ((seed + index * 23) % 41) / 100
+    const multiplier = 0.74 + ((seed + index * 23) % 41) / 100
     const monthlyCost = round2(resource.monthlyCost * multiplier)
 
     return {
       ...resource,
-      id: `gcp-${projectId}-${resource.id}`,
+      id: `gcp-${projectHint}-${resource.id}`,
       name: `gcp-${resource.name}`,
-      region: mapRegionToGcp(resource.region),
+      region: mapRegionToGCP(resource.region),
       monthlyCost,
       hourlyCost: round4(monthlyCost / (30 * 24)),
       tags: {
         ...resource.tags,
         provider: "gcp",
-        project: projectId,
+        project: projectHint,
       },
       usageMetrics: scaleUsage(resource.usageMetrics, seed + index),
     }
@@ -37,12 +38,12 @@ export async function fetchGCPCostData(
   credentials: CloudCredentials,
   days = 90
 ): Promise<CostDataPoint[]> {
-  const projectId = (credentials.projectId ?? "gcp-project").trim().toLowerCase()
-  const seed = hashString(`${projectId}:${credentials.label ?? "gcp"}`)
+  const projectId = credentials.projectId?.trim() || "gcp-project"
+  const seed = hashString(`${projectId}:${credentials.label ?? "default"}`)
   const source = COST_DATA.slice(-days)
 
   return source.map((point, index) => {
-    const factor = 0.8 + ((seed + index * 13) % 22) / 100
+    const factor = 0.82 + ((seed + index * 13) % 31) / 100
     const byService = scaleRecord(point.byService, factor)
     const byTeam = scaleRecord(point.byTeam, factor)
     const byEnvironment = scaleRecord(point.byEnvironment, factor)
@@ -60,34 +61,35 @@ export async function fetchGCPCostData(
 export async function fetchGCPSeededAnomalyEvents(
   credentials: CloudCredentials
 ): Promise<SeededAnomalyEvent[]> {
-  const projectId = (credentials.projectId ?? "gcp-project").trim().toLowerCase()
+  const projectId = credentials.projectId?.trim() || "gcp-project"
+  const projectHint = projectId.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(-24)
 
   return SEEDED_ANOMALY_EVENTS.map((event) => ({
     ...event,
-    id: `gcp-${projectId}-${event.id}`,
-    resourceId: `gcp-${projectId}-${event.resourceId}`,
+    id: `gcp-${projectHint}-${event.id}`,
+    resourceId: `gcp-${projectHint}-${event.resourceId}`,
     resourceName: `gcp-${event.resourceName}`,
   }))
 }
 
-function mapRegionToGcp(region: string): string {
+function mapRegionToGCP(region: string): string {
   if (region === "us-east-1") {
     return "us-east1"
   }
 
   if (region === "us-west-2") {
-    return "us-west2"
+    return "us-west1"
   }
 
   if (region === "eu-west-1") {
     return "europe-west1"
   }
 
-  return "asia-southeast1"
+  return "asia-south1"
 }
 
 function scaleUsage(resourceUsage: CloudResource["usageMetrics"], seed: number) {
-  const usageFactor = 0.82 + (seed % 21) / 100
+  const usageFactor = 0.8 + (seed % 21) / 100
 
   return {
     ...resourceUsage,
@@ -96,7 +98,7 @@ function scaleUsage(resourceUsage: CloudResource["usageMetrics"], seed: number) 
     avgNetworkMbps: round3(resourceUsage.avgNetworkMbps * usageFactor),
     avgDiskIops: round2(resourceUsage.avgDiskIops * usageFactor),
     dailyUsage: resourceUsage.dailyUsage.map((point, index) => {
-      const dailyFactor = usageFactor * (0.94 + ((seed + index * 5) % 9) / 100)
+      const dailyFactor = usageFactor * (0.93 + ((seed + index * 5) % 13) / 100)
       return {
         ...point,
         cpuPercent: round2(point.cpuPercent * dailyFactor),
