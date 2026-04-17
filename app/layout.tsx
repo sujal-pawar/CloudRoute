@@ -4,9 +4,10 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SidebarNav } from "@/components/layout/Sidebar";
+import { AlertToaster } from "@/components/layout/AlertToaster";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -47,12 +48,13 @@ export default function RootLayout({
         <ThemeProvider>
           <TooltipProvider>
             <SidebarProvider>
-              <AppSidebar />
+              <SidebarNav />
               <SidebarInset>
                 <TopBar />
                 <main className="flex flex-1 flex-col">{children}</main>
               </SidebarInset>
             </SidebarProvider>
+            <AlertToaster />
           </TooltipProvider>
         </ThemeProvider>
       </body>

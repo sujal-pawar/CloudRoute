@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAppStore } from "@/lib/store/useAppStore"
 
 const pageTitles: Record<string, { title: string; description: string }> = {
   "/dashboard": {
@@ -50,7 +51,10 @@ const pageTitles: Record<string, { title: string; description: string }> = {
 export function TopBar() {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
-  const [selectedTeam, setSelectedTeam] = React.useState("all-teams")
+  const selectedTeam = useAppStore((state) => state.selectedTeam)
+  const setSelectedTeam = useAppStore((state) => state.setSelectedTeam)
+  const unreadCount = useAppStore((state) => state.unreadAlertIds.length)
+  const markAlertsRead = useAppStore((state) => state.markAlertsRead)
 
   const page = pageTitles[pathname] ?? {
     title: "FinOps Cloud Cost Optimization",
@@ -85,11 +89,19 @@ export function TopBar() {
           </SelectContent>
         </Select>
 
-        <Button type="button" variant="outline" size="icon-sm" className="relative">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          className="relative"
+          onClick={markAlertsRead}
+        >
           <Bell className="size-4" />
-          <Badge className="absolute -top-1 -right-1 size-4 rounded-full p-0 text-[10px]">
-            2
-          </Badge>
+          {unreadCount > 0 ? (
+            <Badge className="absolute -top-1 -right-1 min-w-4 rounded-full px-1 py-0 text-[10px] leading-4">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Badge>
+          ) : null}
           <span className="sr-only">Alerts</span>
         </Button>
 
