@@ -1,5 +1,11 @@
 import Link from "next/link"
-import { ArrowRight, ChartNoAxesCombined, ShieldCheck, Zap } from "lucide-react"
+import {
+  ArrowRight,
+  ChartNoAxesCombined,
+  ShieldCheck,
+  Sparkles,
+  Zap,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -26,11 +32,11 @@ const highlights = [
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-svh overflow-hidden bg-[radial-gradient(circle_at_20%_20%,hsl(194_98%_53%/0.22),transparent_40%),radial-gradient(circle_at_80%_15%,hsl(219_94%_65%/0.2),transparent_45%),linear-gradient(135deg,hsl(227_45%_8%),hsl(219_48%_12%))] text-white">
+    <div className="relative min-h-svh bg-[radial-gradient(circle_at_20%_20%,hsl(194_98%_53%/0.22),transparent_40%),radial-gradient(circle_at_80%_15%,hsl(219_94%_65%/0.2),transparent_45%),linear-gradient(135deg,hsl(227_45%_8%),hsl(219_48%_12%))] text-white">
       <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.08)_0%,transparent_35%,transparent_70%,rgba(255,255,255,0.06)_100%)]" />
 
-      <section className="relative mx-auto flex w-full max-w-6xl flex-col px-6 py-10 sm:px-10 lg:px-14 lg:py-14">
-        <header className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur-sm">
+      <section className="relative mx-auto flex w-full max-w-6xl flex-col px-6 py-6 sm:px-10 lg:px-14 lg:py-8">
+        <header className="sticky top-4 z-20 flex items-center justify-between rounded-2xl border border-white/15 bg-slate-950/55 px-4 py-3 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <span className="text-xl text-cyan-300">▲</span>
             <div>
@@ -38,14 +44,28 @@ export default function HomePage() {
               <p className="text-xs text-white/70">FinOps control plane</p>
             </div>
           </div>
-          <Button asChild variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/20">
-            <Link href="/auth">Login / Sign up</Link>
-          </Button>
+
+          <nav className="flex items-center gap-2">
+            <Button
+              asChild
+              variant="ghost"
+              className="h-8 text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <Link href="/auth?tab=login">Login</Link>
+            </Button>
+            <Button
+              asChild
+              className="h-8 bg-cyan-400 px-4 text-slate-950 hover:bg-cyan-300"
+            >
+              <Link href="/auth?tab=signup">Sign up</Link>
+            </Button>
+          </nav>
         </header>
 
-        <div className="mt-12 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mt-12 grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <p className="inline-flex items-center gap-2 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-cyan-100">
+              <Sparkles className="size-3.5" />
               Hack Carnival 2026
             </p>
             <h1 className="font-heading text-4xl leading-tight font-semibold sm:text-5xl lg:text-6xl">
@@ -56,15 +76,39 @@ export default function HomePage() {
               and ship optimization decisions faster with one shared dashboard.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="h-10 bg-cyan-400 px-4 text-slate-900 hover:bg-cyan-300">
-                <Link href="/auth" className="inline-flex items-center gap-2">
+              <Button
+                asChild
+                size="lg"
+                className="h-10 bg-cyan-400 px-4 text-slate-900 hover:bg-cyan-300"
+              >
+                <Link href="/auth?tab=signup" className="inline-flex items-center gap-2">
                   Start now
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="h-10 border-white/20 bg-white/10 px-4 text-white hover:bg-white/20">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-10 border-white/20 bg-white/10 px-4 text-white hover:bg-white/20"
+              >
                 <Link href="/dashboard">Explore demo dashboard</Link>
               </Button>
+            </div>
+
+            <div className="grid max-w-xl grid-cols-3 gap-2 rounded-xl border border-white/15 bg-white/5 p-2 text-center backdrop-blur-sm">
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-semibold text-cyan-200">24%</p>
+                <p className="text-[11px] text-white/65">avg savings found</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-semibold text-cyan-200">5m</p>
+                <p className="text-[11px] text-white/65">to detect anomalies</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-semibold text-cyan-200">99.9%</p>
+                <p className="text-[11px] text-white/65">uptime visibility</p>
+              </div>
             </div>
           </div>
 
