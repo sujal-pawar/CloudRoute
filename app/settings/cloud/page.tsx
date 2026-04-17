@@ -296,6 +296,12 @@ export default function CloudSettingsPage() {
                 <Lock className="mr-1 inline size-4" />
                 Credentials are encrypted at rest using the server encryption key.
               </p>
+
+              <p className="rounded-md border border-amber-500/25 bg-amber-500/10 p-3 text-amber-100">
+                <ShieldAlert className="mr-1 inline size-4" />
+                AWS reads live resources and cost data. Azure and GCP currently use provider-specific simulated data in this demo build,
+                but capability checks still verify real account connectivity and permissions.
+              </p>
             </>
           )}
         </CardContent>

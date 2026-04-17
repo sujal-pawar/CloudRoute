@@ -16,6 +16,11 @@ import {
   fetchDemoResources,
   fetchDemoSeededAnomalyEvents,
 } from "@/lib/adapters/demo-adapter"
+import {
+  fetchGCPCostData,
+  fetchGCPResources,
+  fetchGCPSeededAnomalyEvents,
+} from "@/lib/adapters/gcp-adapter"
 
 export async function getResources(
   source: DataSourceType,
@@ -31,6 +36,10 @@ export async function getResources(
 
   if (source === "azure" && credentials?.provider === "azure") {
     return fetchAzureResources(credentials)
+  }
+
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPResources(credentials)
   }
 
   return fetchDemoResources()
@@ -53,6 +62,10 @@ export async function getCostData(
     return fetchAzureCostData(credentials, days)
   }
 
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPCostData(credentials, days)
+  }
+
   return fetchDemoCostData(days)
 }
 
@@ -70,6 +83,10 @@ export async function getSeededAnomalyEvents(
 
   if (source === "azure" && credentials?.provider === "azure") {
     return fetchAzureSeededAnomalyEvents(credentials)
+  }
+
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPSeededAnomalyEvents(credentials)
   }
 
   return fetchDemoSeededAnomalyEvents()

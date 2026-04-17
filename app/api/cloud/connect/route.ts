@@ -105,8 +105,7 @@ export async function POST(request: NextRequest) {
   if (!capabilityCheck.passed) {
     return NextResponse.json(
       {
-        error:
-          "Credential validation failed for one or more required AWS capabilities. Check permissions and try again.",
+        error: `Credential validation failed for one or more required ${source.toUpperCase()} capabilities. Check permissions and try again.`,
         capabilityCheck,
       },
       { status: 400 }
