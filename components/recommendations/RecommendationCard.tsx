@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { ArrowRight, CheckCircle2, Sparkles, XCircle } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,10 @@ export function RecommendationCard({
   onDismiss,
   acting,
 }: RecommendationCardProps) {
+  const [aiExplanation, setAiExplanation] = React.useState<string | null>(null)
+  const [aiError, setAiError] = React.useState<string | null>(null)
+  const [aiLoading, setAiLoading] = React.useState(false)
+
   const statusTone =
     recommendation.status === "acted"
       ? "bg-emerald-500/15 text-emerald-400"
@@ -87,6 +92,15 @@ export function RecommendationCard({
 
         <p className="text-sm text-muted-foreground">{recommendation.reasoning}</p>
 
+        {aiExplanation ? (
+          <div className="rounded-lg border border-blue-500/25 bg-blue-500/10 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-300">AI explanation</p>
+            <p className="mt-1 text-sm text-blue-100/90">{aiExplanation}</p>
+          </div>
+        ) : null}
+
+        {aiError ? <p className="text-xs text-red-400">{aiError}</p> : null}
+
         <div className="flex items-center gap-2">
           <Badge className={effortTone}>{recommendation.effort} effort</Badge>
           {recommendation.actedAt ? (
@@ -97,7 +111,58 @@ export function RecommendationCard({
         </div>
       </CardContent>
 
-      <CardFooter className="flex justify-end gap-2">
+      <CardFooter className="flex flex-wrap justify-between gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={async () => {
+            setAiLoading(true)
+            setAiError(null)
+
+            try {
+              const response = await fetch("/api/ai-recommendation", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  resourceName: recommendation.resourceName,
+                  team,
+                  type: recommendation.type,
+                  currentTier: recommendation.currentTier,
+                  suggestedTier: recommendation.suggestedTier,
+                  currentMonthlyCost: recommendation.currentMonthlyCost,
+                  projectedMonthlyCost: recommendation.projectedMonthlyCost,
+                  monthlySavings: recommendation.monthlySavings,
+                  annualSavings: recommendation.annualSavings,
+                  reasoning: recommendation.reasoning,
+                  effort: recommendation.effort,
+                }),
+              })
+
+              const payload = (await response.json().catch(() => ({}))) as {
+                explanation?: string
+                error?: string
+              }
+
+              if (!response.ok || !payload.explanation) {
+                throw new Error(payload.error ?? "Unable to generate AI explanation")
+              }
+
+              setAiExplanation(payload.explanation)
+            } catch (error) {
+              setAiError(error instanceof Error ? error.message : "Unable to generate AI explanation")
+            } finally {
+              setAiLoading(false)
+            }
+          }}
+          disabled={aiLoading}
+        >
+          <Sparkles className="mr-1 size-4" />
+          {aiLoading ? "Thinking..." : "Ask AI"}
+        </Button>
+
+        <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -115,6 +180,7 @@ export function RecommendationCard({
           <CheckCircle2 className="mr-1 size-4" />
           {acting ? "Acting..." : "Act on This"}
         </Button>
+        </div>
       </CardFooter>
     </Card>
   )

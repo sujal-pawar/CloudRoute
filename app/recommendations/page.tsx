@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice"
 import { RecommendationCard } from "@/components/recommendations/RecommendationCard"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -220,16 +221,38 @@ export default function RecommendationsPage() {
           </TabsList>
         </Tabs>
 
-        <Select value={sortBy} onValueChange={(next) => setSortBy(next as SortBy)}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="savings">Savings (High to Low)</SelectItem>
-            <SelectItem value="effort">Effort</SelectItem>
-            <SelectItem value="team">Team</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (filteredRecommendations.length === 0) {
+                toast.error("No rows to export", {
+                  description: "Change your filter or wait for data to load.",
+                })
+                return
+              }
+
+              exportRecommendationsCsv(filteredRecommendations)
+              toast.success("CSV exported", {
+                description: "Saved as costpilot-recommendations.csv",
+              })
+            }}
+          >
+            Export CSV
+          </Button>
+
+          <Select value={sortBy} onValueChange={(next) => setSortBy(next as SortBy)}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="savings">Savings (High to Low)</SelectItem>
+              <SelectItem value="effort">Effort</SelectItem>
+              <SelectItem value="team">Team</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error ? (
@@ -289,4 +312,53 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-mono text-2xl font-bold tabular-nums">{value}</p>
     </div>
   )
+}
+
+function exportRecommendationsCsv(recommendations: RecommendationsView[]) {
+  const lines = [
+    [
+      "Resource",
+      "Team",
+      "Type",
+      "Current Tier",
+      "Suggested Tier",
+      "Status",
+      "Monthly Savings",
+      "Annual Savings",
+    ].join(","),
+    ...recommendations.map((recommendation) =>
+      [
+        recommendation.resourceName,
+        recommendation.team,
+        recommendation.type,
+        recommendation.currentTier,
+        recommendation.suggestedTier,
+        recommendation.status,
+        recommendation.monthlySavings.toFixed(2),
+        recommendation.annualSavings.toFixed(2),
+      ]
+        .map(escapeCsv)
+        .join(",")
+    ),
+  ]
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = "costpilot-recommendations.csv"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function escapeCsv(value: string | number) {
+  const text = String(value)
+
+  if (!/[",\n]/.test(text)) {
+    return text
+  }
+
+  return `"${text.replace(/"/g, '""')}"`
 }

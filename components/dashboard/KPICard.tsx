@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
+import { CircleHelp } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 type KPICardProps = {
@@ -10,6 +12,7 @@ type KPICardProps = {
   trend?: string
   trendTone?: "positive" | "negative" | "neutral"
   icon?: ReactNode
+  tooltip?: string
 }
 
 export function KPICard({
@@ -19,12 +22,31 @@ export function KPICard({
   trend,
   trendTone = "neutral",
   icon,
+  tooltip,
 }: KPICardProps) {
   return (
     <Card className="h-full rounded-xl border-border/70 bg-card">
       <CardHeader className="pb-2">
         <CardDescription className="flex items-center justify-between text-xs uppercase tracking-wide">
-          <span>{title}</span>
+          <span className="flex items-center gap-1.5">
+            {title}
+            {tooltip ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={`${title} explanation`}
+                    >
+                      <CircleHelp className="size-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>{tooltip}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
+          </span>
           {icon ? <span className="text-muted-foreground">{icon}</span> : null}
         </CardDescription>
       </CardHeader>

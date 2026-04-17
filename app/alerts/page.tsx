@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { Zap } from "lucide-react";
 
 import { AlertRuleForm, type AlertRuleDraft } from "@/components/alerts/AlertRuleForm";
 import { AlertRuleList } from "@/components/alerts/AlertRuleList";
 import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AlertEvent, AlertRule } from "@/lib/types";
 
@@ -138,11 +140,43 @@ export default function AlertsPage() {
 
   return (
     <section className="space-y-6 p-6 md:p-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Budget Alerts</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Configure cost thresholds and review breach history across teams, services, and environments.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Budget Alerts</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Configure cost thresholds and review breach history across teams, services, and environments.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              const response = await fetch("/api/alerts/simulate-breach", {
+                method: "POST",
+              })
+
+              const payload = (await response.json().catch(() => ({}))) as {
+                error?: string
+                message?: string
+              }
+
+              if (!response.ok) {
+                throw new Error(payload.error ?? "Failed to simulate breach")
+              }
+
+              toast.error("🚨 Budget breach simulated", {
+                description: payload.message ?? "Backend team exceeded budget threshold.",
+              })
+              await loadData()
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Failed to simulate breach"
+              toast.error("Simulation failed", { description: message })
+            }
+          }}
+        >
+          <Zap className="mr-1 size-4" />
+          Simulate Budget Breach
+        </Button>
       </div>
 
       {loading ? (

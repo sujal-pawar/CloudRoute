@@ -117,7 +117,7 @@ export const TeamSpendTable = React.memo(function TeamSpendTable({ rows }: TeamS
                 <TableCell className="font-mono tabular-nums">{row.resourceCount}</TableCell>
                 <TableCell className="font-mono tabular-nums">{row.idleCount}</TableCell>
                 <TableCell>
-                  <Badge className={scoreTone}>{row.optimizationScore.toFixed(1)}</Badge>
+                  <AnimatedScoreBadge score={row.optimizationScore} className={scoreTone} />
                 </TableCell>
                 <TableCell className="font-mono tabular-nums">{formatCurrency(row.budget)}</TableCell>
                 <TableCell>
@@ -139,6 +139,45 @@ function SortButton({ label, onClick }: { label: string; onClick: () => void }) 
       <ArrowUpDown className="ml-1 size-3" />
     </Button>
   )
+}
+
+function AnimatedScoreBadge({ score, className }: { score: number; className: string }) {
+  const [displayScore, setDisplayScore] = React.useState(score)
+  const scoreRef = React.useRef(score)
+
+  React.useEffect(() => {
+    scoreRef.current = displayScore
+  }, [displayScore])
+
+  React.useEffect(() => {
+    if (scoreRef.current === score) {
+      return
+    }
+
+    const step = score > scoreRef.current ? 0.5 : -0.5
+    const timer = window.setInterval(() => {
+      setDisplayScore((current) => {
+        const next = roundToOneDecimal(current + step)
+
+        if ((step > 0 && next >= score) || (step < 0 && next <= score)) {
+          window.clearInterval(timer)
+          return score
+        }
+
+        return next
+      })
+    }, 30)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [score])
+
+  return <Badge className={className}>{displayScore.toFixed(1)}</Badge>
+}
+
+function roundToOneDecimal(value: number) {
+  return Math.round(value * 10) / 10
 }
 
 TeamSpendTable.displayName = "TeamSpendTable"

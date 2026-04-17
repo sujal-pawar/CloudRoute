@@ -5,6 +5,7 @@ import {
   Activity,
   BadgeDollarSign,
   RefreshCcw,
+  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react"
@@ -28,6 +29,9 @@ type CostSeriesPoint = {
 
 type CostsResponse = {
   data: CostSeriesPoint[]
+  alerts?: {
+    ruleName?: string
+  }[]
 }
 
 type ResourcesResponse = {
@@ -64,6 +68,21 @@ type DashboardState = {
   anomalies: CostAnomaly[]
 }
 
+type DashboardAIMetrics = {
+  costs: {
+    totalThisMonth: number
+    changePercent: number
+    topRecommendation: string
+  }
+  idleCount: number
+  totalWaste: number
+  topTeam: {
+    name: string
+    spend: number
+  }
+  breachedAlerts: string[]
+}
+
 const TEAM_BUDGETS: Record<Team, number> = {
   platform: 5200,
   backend: 8000,
@@ -92,10 +111,46 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null)
   const [lastUpdatedNow, setLastUpdatedNow] = React.useState(() => Date.now())
   const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
+  const [breachedAlerts, setBreachedAlerts] = React.useState<string[]>([])
+  const [aiSummary, setAiSummary] = React.useState<string | null>(null)
+  const [aiLoading, setAiLoading] = React.useState(false)
+  const [aiError, setAiError] = React.useState<string | null>(null)
+  const [aiGeneratedAt, setAiGeneratedAt] = React.useState<Date | null>(null)
   const selectedTeam = useAppStore((store) => store.selectedTeam)
   const activeTeam: Team | null = selectedTeam === "all-teams" ? null : selectedTeam
 
-  const refreshDashboard = React.useCallback(async () => {
+  const refreshAISummary = React.useCallback(async (metrics: DashboardAIMetrics) => {
+    setAiLoading(true)
+    setAiError(null)
+
+    try {
+      const response = await fetch("/api/ai-summary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(metrics),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        summary?: string
+        error?: string
+      }
+
+      if (!response.ok || !payload.summary) {
+        throw new Error(payload.error ?? "Unable to generate AI summary")
+      }
+
+      setAiSummary(payload.summary)
+      setAiGeneratedAt(new Date())
+    } catch (nextError) {
+      setAiError(nextError instanceof Error ? nextError.message : "Unable to generate AI summary")
+    } finally {
+      setAiLoading(false)
+    }
+  }, [])
+
+  const refreshDashboard = React.useCallback(async (options?: { refreshAI?: boolean }) => {
     try {
       const [
         trend90dRes,
@@ -143,6 +198,7 @@ export default function DashboardPage() {
         })
         setState(EMPTY_STATE)
         setLastUpdated(null)
+        setBreachedAlerts([])
         setError(null)
         return
       }
@@ -187,6 +243,27 @@ export default function DashboardPage() {
         anomalies: anomalies.anomalies,
       })
 
+      const nextBreachedAlerts = Array.from(
+        new Set(
+          (trend90d.alerts ?? [])
+            .map((entry) => entry.ruleName?.trim())
+            .filter((name): name is string => Boolean(name))
+        )
+      )
+      setBreachedAlerts(nextBreachedAlerts)
+
+      if (options?.refreshAI ?? false) {
+        const metrics = buildDashboardAiMetrics({
+          trend90d: trend90d.data,
+          team90d: team90d.data,
+          idleResources: idle.idleResources,
+          recommendations: recommendations.recommendations,
+          breachedAlerts: nextBreachedAlerts,
+        })
+
+        void refreshAISummary(metrics)
+      }
+
       setError(null)
       setLastUpdated(new Date())
     } catch (nextError) {
@@ -194,15 +271,15 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [refreshAISummary])
 
   React.useEffect(() => {
     const initialLoad = window.setTimeout(() => {
-      void refreshDashboard()
+      void refreshDashboard({ refreshAI: true })
     }, 0)
 
     const interval = window.setInterval(() => {
-      void refreshDashboard()
+      void refreshDashboard({ refreshAI: false })
     }, 30000)
 
     return () => {
@@ -367,7 +444,12 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Viewing team: {activeTeam}</p>
           ) : null}
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => void refreshDashboard()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => void refreshDashboard({ refreshAI: true })}
+        >
           <RefreshCcw className="size-4" />
           Refresh
         </Button>
@@ -421,8 +503,54 @@ export default function DashboardPage() {
               description="Average score across all teams"
               trend="Higher is better"
               trendTone="neutral"
+              tooltip="Score drops for idle resources, unacted recommendations, and anomalies. Score improves when recommendations are acted on."
               icon={<Activity className="size-4" />}
             />
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-card p-4 md:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-blue-400" />
+                <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">AI Cost Analyst</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {aiGeneratedAt
+                  ? `Generated ${formatSecondsAgo(lastUpdatedNow - aiGeneratedAt.getTime())} ago`
+                  : "Not generated yet"}
+              </p>
+            </div>
+
+            <p className="mt-3 min-h-16 text-sm leading-6 text-foreground/90">
+              {aiSummary
+                ? `"${aiSummary}"`
+                : aiLoading
+                  ? "Generating analysis..."
+                  : "No AI report yet. Click Refresh Analysis to generate an executive summary."}
+            </p>
+
+            {aiError ? <p className="mt-2 text-xs text-red-400">{aiError}</p> : null}
+
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const metrics = buildDashboardAiMetrics({
+                    trend90d: state.trend90d,
+                    team90d: state.team90d,
+                    idleResources: state.idleResources,
+                    recommendations: state.recommendations,
+                    breachedAlerts,
+                  })
+                  void refreshAISummary(metrics)
+                }}
+                disabled={aiLoading || state.trend90d.length === 0}
+              >
+                {aiLoading ? "Refreshing..." : "Refresh Analysis"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Powered by AI</span>
+            </div>
           </div>
 
           <CostTrendChart
@@ -547,6 +675,64 @@ function calculateScore(
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+function buildDashboardAiMetrics(input: {
+  trend90d: CostSeriesPoint[]
+  team90d: CostSeriesPoint[]
+  idleResources: IdleResource[]
+  recommendations: Recommendation[]
+  breachedAlerts: string[]
+}): DashboardAIMetrics {
+  const totalThisMonth = sumTail(input.trend90d.map((point) => point.totalCost), 30)
+  const lastMonthTotal = sumWindow(input.trend90d.map((point) => point.totalCost), 30, 60)
+  const changePercent = percentageChange(totalThisMonth, lastMonthTotal)
+
+  const pendingRecommendations = input.recommendations.filter(
+    (recommendation) => recommendation.status === "pending"
+  )
+  const topRecommendation = pendingRecommendations
+    .sort((left, right) => right.monthlySavings - left.monthlySavings)[0]
+
+  const idleWaste = input.idleResources.reduce((sum, item) => sum + item.monthlySavings, 0)
+  const pendingSavings = pendingRecommendations.reduce(
+    (sum, recommendation) => sum + recommendation.monthlySavings,
+    0
+  )
+  const totalWaste = round2(idleWaste + pendingSavings)
+
+  const teamSpend = calculateTeamSpend(input.team90d)
+  const sortedTeams = Object.entries(teamSpend).sort(([, left], [, right]) => right - left)
+  const [topTeamName = "unknown", topTeamSpend = 0] = sortedTeams[0] ?? ["unknown", 0]
+
+  return {
+    costs: {
+      totalThisMonth,
+      changePercent,
+      topRecommendation: topRecommendation
+        ? `${topRecommendation.resourceName} (${topRecommendation.currentTier} -> ${topRecommendation.suggestedTier}) can save ${formatCurrency(topRecommendation.monthlySavings)} per month`
+        : "No pending recommendation",
+    },
+    idleCount: input.idleResources.length,
+    totalWaste,
+    topTeam: {
+      name: topTeamName,
+      spend: round2(topTeamSpend),
+    },
+    breachedAlerts: input.breachedAlerts,
+  }
+}
+
+function calculateTeamSpend(teamPoints: CostSeriesPoint[]) {
+  const spend: Record<string, number> = {}
+
+  for (const point of teamPoints.slice(-30)) {
+    for (const [team, cost] of Object.entries(point.breakdown)) {
+      spend[team] = (spend[team] ?? 0) + cost
+    }
+  }
+
+  return spend
 }
 
 function formatSecondsAgo(diffMs: number): string {
