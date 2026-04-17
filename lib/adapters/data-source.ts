@@ -21,11 +21,6 @@ import {
   fetchDemoResources,
   fetchDemoSeededAnomalyEvents,
 } from "@/lib/adapters/demo-adapter"
-import {
-  fetchGCPCostData,
-  fetchGCPResources,
-  fetchGCPSeededAnomalyEvents,
-} from "@/lib/adapters/gcp-adapter"
 
 export async function getResources(
   source: DataSourceType,
@@ -47,7 +42,9 @@ export async function getResources(
     return fetchGCPResources(credentials)
   }
 
-  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
+  throw new Error(
+    `Unsupported data source/provider combination: source='${source}', provider='${credentials?.provider ?? "none"}'`
+  )
 }
 
 export async function getCostData(
@@ -71,7 +68,9 @@ export async function getCostData(
     return fetchGCPCostData(credentials, days)
   }
 
-  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
+  throw new Error(
+    `Unsupported data source/provider combination: source='${source}', provider='${credentials?.provider ?? "none"}'`
+  )
 }
 
 export async function getSeededAnomalyEvents(
@@ -94,5 +93,7 @@ export async function getSeededAnomalyEvents(
     return fetchGCPSeededAnomalyEvents(credentials)
   }
 
-  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
+  throw new Error(
+    `Unsupported data source/provider combination: source='${source}', provider='${credentials?.provider ?? "none"}'`
+  )
 }
