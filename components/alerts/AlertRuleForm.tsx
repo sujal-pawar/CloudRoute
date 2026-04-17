@@ -49,34 +49,42 @@ export function AlertRuleForm({
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!editingRule) {
-      setName("");
-      setScope("team");
-      setScopeValue("backend");
-      setThreshold("8000");
-      setThresholdType("absolute");
-      setError(null);
-      return;
-    }
+    const syncTimer = window.setTimeout(() => {
+      if (!editingRule) {
+        setName("");
+        setScope("team");
+        setScopeValue("backend");
+        setThreshold("8000");
+        setThresholdType("absolute");
+        setError(null);
+        return;
+      }
 
-    setName(editingRule.name);
-    setScope(editingRule.scope);
-    setScopeValue(editingRule.scopeValue || "total");
-    setThreshold(String(editingRule.threshold));
-    setThresholdType(editingRule.thresholdType);
-    setError(null);
+      setName(editingRule.name);
+      setScope(editingRule.scope);
+      setScopeValue(editingRule.scopeValue || "total");
+      setThreshold(String(editingRule.threshold));
+      setThresholdType(editingRule.thresholdType);
+      setError(null);
+    }, 0);
+
+    return () => window.clearTimeout(syncTimer);
   }, [editingRule]);
 
   React.useEffect(() => {
-    if (scope === "total") {
-      setScopeValue("total");
-      return;
-    }
+    const syncTimer = window.setTimeout(() => {
+      if (scope === "total") {
+        setScopeValue("total");
+        return;
+      }
 
-    const allowed = scopeValueOptions[scope];
-    if (!allowed.includes(scopeValue)) {
-      setScopeValue(allowed[0]);
-    }
+      const allowed = scopeValueOptions[scope];
+      if (!allowed.includes(scopeValue)) {
+        setScopeValue(allowed[0]);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(syncTimer);
   }, [scope, scopeValue]);
 
   const valueChoices = scope === "total" ? ["total"] : scopeValueOptions[scope];

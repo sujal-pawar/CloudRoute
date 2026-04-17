@@ -38,7 +38,7 @@ export function RecommendationCard({
         : "bg-red-500/15 text-red-300"
 
   return (
-    <Card className="h-full rounded-xl border-border/70 bg-card">
+    <Card className="h-full rounded-xl border-border/70 bg-card transition-all hover:-translate-y-0.5 hover:border-emerald-500/40">
       <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>

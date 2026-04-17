@@ -62,7 +62,7 @@ export function TeamSpendTable({ rows }: TeamSpendTableProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-4">
+    <div className="overflow-x-auto rounded-xl border border-border/70 bg-card p-4">
       <h3 className="mb-3 text-base font-semibold">Team Spend Overview</h3>
       <Table>
         <TableHeader>
@@ -92,7 +92,13 @@ export function TeamSpendTable({ rows }: TeamSpendTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedRows.map((row) => {
+          {sortedRows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                No team spend rows available for the current dataset.
+              </TableCell>
+            </TableRow>
+          ) : sortedRows.map((row) => {
             const scoreTone = row.optimizationScore >= 80
               ? "text-emerald-400 bg-emerald-500/15"
               : row.optimizationScore >= 60
@@ -100,7 +106,7 @@ export function TeamSpendTable({ rows }: TeamSpendTableProps) {
                 : "text-red-400 bg-red-500/15"
 
             return (
-              <TableRow key={row.team}>
+              <TableRow key={row.team} className="transition-colors hover:bg-muted/20">
                 <TableCell className="font-medium capitalize">{row.team}</TableCell>
                 <TableCell className="font-mono tabular-nums">{formatCurrency(row.currentMonthCost)}</TableCell>
                 <TableCell className="font-mono tabular-nums">

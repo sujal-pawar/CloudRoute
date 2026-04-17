@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { IdleResourceTable } from "@/components/idle/IdleResourceTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { IdleResource } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 
@@ -137,7 +138,13 @@ export default function IdleResourcesPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+        </div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
           <IdleResourceTable

@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { CostTrendChart } from "@/components/dashboard/CostTrendChart"
 import { CostBreakdownChart } from "@/components/dashboard/CostBreakdownChart"
@@ -213,6 +214,8 @@ export default function DashboardPage() {
     }
   }, [state])
 
+  const showInitialSkeleton = loading && state.trend90d.length === 0
+
   return (
     <section className="space-y-6 p-6 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -234,58 +237,76 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KPICard
-          title="Total This Month"
-          value={formatCurrency(kpis.currentMonthTotal)}
-          description="Aggregate cloud spend over the last 30 days"
-          trend={`${formatPercent(kpis.monthChangePercent)} vs last month`}
-          trendTone={kpis.monthChangePercent <= 0 ? "positive" : "negative"}
-          icon={<BadgeDollarSign className="size-4" />}
-        />
-        <KPICard
-          title="Waste Identified"
-          value={formatCurrency(kpis.wasteIdentified)}
-          description="Idle + oversized monthly waste"
-          trend="Potential for immediate optimization"
-          trendTone="negative"
-          icon={<TrendingDown className="size-4" />}
-        />
-        <KPICard
-          title="Savings Opportunity"
-          value={formatCurrency(kpis.pendingSavings)}
-          description="Projected monthly savings from pending actions"
-          trend="Pending recommendation value"
-          trendTone="positive"
-          icon={<TrendingUp className="size-4" />}
-        />
-        <KPICard
-          title="Avg Optimization Score"
-          value={`${kpis.avgOptimizationScore.toFixed(1)} / 100`}
-          description="Average score across all teams"
-          trend="Higher is better"
-          trendTone="neutral"
-          icon={<Activity className="size-4" />}
-        />
-      </div>
+      {showInitialSkeleton ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <KPICard
+              title="Total This Month"
+              value={formatCurrency(kpis.currentMonthTotal)}
+              description="Aggregate cloud spend over the last 30 days"
+              trend={`${formatPercent(kpis.monthChangePercent)} vs last month`}
+              trendTone={kpis.monthChangePercent <= 0 ? "positive" : "negative"}
+              icon={<BadgeDollarSign className="size-4" />}
+            />
+            <KPICard
+              title="Waste Identified"
+              value={formatCurrency(kpis.wasteIdentified)}
+              description="Idle + oversized monthly waste"
+              trend="Potential for immediate optimization"
+              trendTone="negative"
+              icon={<TrendingDown className="size-4" />}
+            />
+            <KPICard
+              title="Savings Opportunity"
+              value={formatCurrency(kpis.pendingSavings)}
+              description="Projected monthly savings from pending actions"
+              trend="Pending recommendation value"
+              trendTone="positive"
+              icon={<TrendingUp className="size-4" />}
+            />
+            <KPICard
+              title="Avg Optimization Score"
+              value={`${kpis.avgOptimizationScore.toFixed(1)} / 100`}
+              description="Average score across all teams"
+              trend="Higher is better"
+              trendTone="neutral"
+              icon={<Activity className="size-4" />}
+            />
+          </div>
 
-      <CostTrendChart
-        data={state.trend90d.map((point) => ({ date: point.date, totalCost: point.totalCost }))}
-        anomalies={state.anomalies}
-      />
+          <CostTrendChart
+            data={state.trend90d.map((point) => ({ date: point.date, totalCost: point.totalCost }))}
+            anomalies={state.anomalies}
+          />
 
-      <CostBreakdownChart
-        serviceData={state.breakdownService30d}
-        teamData={state.breakdownTeam30d}
-        environmentData={state.breakdownEnv30d}
-      />
+          <CostBreakdownChart
+            serviceData={state.breakdownService30d}
+            teamData={state.breakdownTeam30d}
+            environmentData={state.breakdownEnv30d}
+          />
 
-      <TeamSpendTable rows={kpis.teamRows} />
-
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading dashboard signals...</p>
-      ) : null}
+          <TeamSpendTable rows={kpis.teamRows} />
+        </>
+      )}
     </section>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-[360px] rounded-xl" />
+      <Skeleton className="h-[360px] rounded-xl" />
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
   )
 }
 

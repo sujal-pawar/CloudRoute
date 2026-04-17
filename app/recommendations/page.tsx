@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { RecommendationCard } from "@/components/recommendations/RecommendationCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CloudResource, Recommendation } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
@@ -205,7 +206,20 @@ export default function RecommendationsPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Preparing rightsizing opportunities...</p>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Preparing rightsizing opportunities...</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-72 rounded-xl" />
+            <Skeleton className="h-72 rounded-xl" />
+            <Skeleton className="h-72 rounded-xl" />
+            <Skeleton className="h-72 rounded-xl" />
+          </div>
+        </div>
       ) : filteredRecommendations.length === 0 ? (
         <div className="rounded-xl border border-border/70 bg-card p-8 text-center text-sm text-muted-foreground">
           No recommendations match the selected filter.

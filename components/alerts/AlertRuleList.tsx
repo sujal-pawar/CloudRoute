@@ -48,7 +48,7 @@ export function AlertRuleList({
               const ratioLabel = `${Math.round(rawRatio)}%`;
 
               return (
-                <div key={rule.id} className="rounded-lg border p-3">
+                <div key={rule.id} className="rounded-lg border p-3 transition-colors hover:bg-muted/20">
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">{rule.name}</p>
