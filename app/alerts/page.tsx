@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AlertRuleForm, type AlertRuleDraft } from "@/components/alerts/AlertRuleForm";
 import { AlertRuleList } from "@/components/alerts/AlertRuleList";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AlertEvent, AlertRule } from "@/lib/types";
 
 type AlertsApiPayload = {
@@ -43,7 +44,11 @@ export default function AlertsPage() {
   }, []);
 
   React.useEffect(() => {
-    void loadData();
+    const initialLoad = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoad);
   }, [loadData]);
 
   const handleFormSubmit = async (payload: AlertRuleDraft) => {
@@ -123,7 +128,21 @@ export default function AlertsPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading alerts...</p>
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-3">
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-36 rounded-xl" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
+          </div>
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <AlertRuleList

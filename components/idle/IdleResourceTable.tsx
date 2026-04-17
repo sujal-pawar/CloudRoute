@@ -29,7 +29,7 @@ export function IdleResourceTable({ resources }: IdleResourceTableProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-4">
+    <div className="overflow-x-auto rounded-xl border border-border/70 bg-card p-4">
       <Table>
         <TableHeader>
           <TableRow>
@@ -53,7 +53,7 @@ export function IdleResourceTable({ resources }: IdleResourceTableProps) {
               : "bg-amber-500/15 text-amber-400"
 
             return (
-              <TableRow key={item.resource.id}>
+              <TableRow key={item.resource.id} className="transition-colors hover:bg-muted/20">
                 <TableCell>
                   <div>
                     <p className="font-medium">{item.resource.name}</p>

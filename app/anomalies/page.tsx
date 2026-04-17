@@ -8,6 +8,7 @@ import { AnomalyChart } from "@/components/anomalies/AnomalyChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CostAnomaly } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -86,7 +87,15 @@ export default function AnomaliesPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading anomaly data...</p>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Loading anomaly data...</p>
+          <Skeleton className="h-[360px] rounded-xl" />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Skeleton className="h-44 rounded-xl" />
+            <Skeleton className="h-44 rounded-xl" />
+            <Skeleton className="h-44 rounded-xl" />
+          </div>
+        </div>
       ) : (
         <>
           <AnomalyChart data={costData} anomalies={visibleAnomalies} />

@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { IdleResourceTable } from "@/components/idle/IdleResourceTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { IdleResource } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 
@@ -129,7 +130,13 @@ export default function IdleResourcesPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+        </div>
       ) : (
         <IdleResourceTable resources={filteredResources} />
       )}
