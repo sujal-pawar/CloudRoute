@@ -16,7 +16,9 @@ type CreateAlertBody = {
 };
 
 export async function GET() {
-  const rules = listAlertRules(COST_DATA);
+  // Ensure default rules are evaluated so breach history is populated for demo views.
+  const result = runAlertChecker(COST_DATA);
+  const rules = result.rules.length > 0 ? result.rules : listAlertRules(COST_DATA);
   const events = listAlertEvents();
 
   return Response.json({

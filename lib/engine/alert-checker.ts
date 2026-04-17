@@ -61,6 +61,17 @@ let alertRules: AlertRule[] = [
     createdAt: new Date().toISOString(),
   },
   {
+    id: "rule-prod-1",
+    name: "Production Spend Guardrail",
+    scope: "environment",
+    scopeValue: "production",
+    threshold: 19000,
+    thresholdType: "absolute",
+    currentSpend: 0,
+    breached: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
     id: "rule-backend-1",
     name: "Backend Budget Watch",
     scope: "team",
