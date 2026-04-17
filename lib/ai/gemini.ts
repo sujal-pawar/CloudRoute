@@ -14,7 +14,7 @@ type GeminiResponse = {
   candidates?: GeminiCandidate[]
 }
 
-const DEFAULT_MODEL = "gemini-flash-latest"
+const DEFAULT_MODEL = "gemini-1.5-flash"
 
 export async function generateGeminiText(prompt: string, maxOutputTokens = 220): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
@@ -24,13 +24,12 @@ export async function generateGeminiText(prompt: string, maxOutputTokens = 220):
   }
 
   const model = process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-goog-api-key": apiKey,
     },
     body: JSON.stringify({
       contents: [
