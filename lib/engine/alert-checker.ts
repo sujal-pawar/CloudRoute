@@ -15,6 +15,10 @@ type NewAlertRuleInput = {
   thresholdType?: AlertRule["thresholdType"];
 };
 
+type UpdateAlertRuleInput = Partial<
+  Pick<AlertRule, "name" | "scope" | "scopeValue" | "threshold" | "thresholdType">
+>;
+
 type AlertCheckResult = {
   rules: AlertRule[];
   breachedEvents: AlertEvent[];
@@ -162,6 +166,53 @@ export function createAlertRule(input: NewAlertRuleInput, costData: CostDataPoin
   return created;
 }
 
+export function updateAlertRule(
+  id: string,
+  input: UpdateAlertRuleInput,
+  costData: CostDataPoint[]
+): AlertRule {
+  const index = alertRules.findIndex((rule) => rule.id === id);
+
+  if (index === -1) {
+    throw new Error("Alert rule not found");
+  }
+
+  const current = alertRules[index];
+  const nextScope = input.scope ?? current.scope;
+  const nextScopeValue =
+    nextScope === "total"
+      ? "total"
+      : (input.scopeValue ?? current.scopeValue ?? "").trim();
+
+  if (!nextScopeValue) {
+    throw new Error("scopeValue is required for team/service/environment alerts");
+  }
+
+  const nextThreshold =
+    typeof input.threshold === "number" ? round2(input.threshold) : current.threshold;
+
+  alertRules[index] = {
+    ...current,
+    ...input,
+    scope: nextScope,
+    scopeValue: nextScopeValue,
+    threshold: nextThreshold,
+    thresholdType: input.thresholdType ?? current.thresholdType,
+    name: (input.name ?? current.name).trim(),
+    breached: false,
+  };
+
+  runAlertChecker(costData);
+
+  return alertRules[index];
+}
+
+export function deleteAlertRule(id: string): boolean {
+  const previousLength = alertRules.length;
+  alertRules = alertRules.filter((rule) => rule.id !== id);
+  return alertRules.length !== previousLength;
+}
+
 function calculateCurrentSpend(rule: AlertRule, costData: CostDataPoint[]): number {
   const latestMonth = costData.slice(-30);
 
@@ -174,7 +225,9 @@ function calculateCurrentSpend(rule: AlertRule, costData: CostDataPoint[]): numb
       return 0;
     }
 
-    return latestMonth.reduce((sum, point) => sum + point.byTeam[rule.scopeValue], 0);
+    const team = rule.scopeValue;
+
+    return latestMonth.reduce((sum, point) => sum + point.byTeam[team], 0);
   }
 
   if (rule.scope === "service") {
@@ -182,14 +235,18 @@ function calculateCurrentSpend(rule: AlertRule, costData: CostDataPoint[]): numb
       return 0;
     }
 
-    return latestMonth.reduce((sum, point) => sum + point.byService[rule.scopeValue], 0);
+    const service = rule.scopeValue;
+
+    return latestMonth.reduce((sum, point) => sum + point.byService[service], 0);
   }
 
   if (!isEnvironment(rule.scopeValue)) {
     return 0;
   }
 
-  return latestMonth.reduce((sum, point) => sum + point.byEnvironment[rule.scopeValue], 0);
+  const environment = rule.scopeValue;
+
+  return latestMonth.reduce((sum, point) => sum + point.byEnvironment[environment], 0);
 }
 
 function resolveThreshold(rule: AlertRule): number {
