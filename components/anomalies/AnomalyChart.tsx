@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Line,
   LineChart,
   ReferenceDot,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -27,6 +26,41 @@ type AnomalyChartProps = {
 };
 
 export function AnomalyChart({ data, anomalies }: AnomalyChartProps) {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const node = chartContainerRef.current;
+    if (!node) {
+      return;
+    }
+
+    const updateFromRect = (width: number, height: number) => {
+      setChartSize({
+        width: Math.max(0, Math.floor(width)),
+        height: Math.max(0, Math.floor(height)),
+      });
+    };
+
+    const initialRect = node.getBoundingClientRect();
+    updateFromRect(initialRect.width, initialRect.height);
+
+    const observer = new ResizeObserver((entriesList) => {
+      const entry = entriesList[0];
+      if (!entry) {
+        return;
+      }
+
+      updateFromRect(entry.contentRect.width, entry.contentRect.height);
+    });
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const activeAnomalies = useMemo(() => anomalies.filter((anomaly) => !anomaly.resolved), [anomalies]);
 
   const anomalyDateToCost = useMemo(() => {
@@ -50,9 +84,9 @@ export function AnomalyChart({ data, anomalies }: AnomalyChartProps) {
         <CardTitle>Daily Cost With Anomaly Markers</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+        <div ref={chartContainerRef} className="h-80 w-full min-w-0">
+          {chartSize.width > 0 && chartSize.height > 0 ? (
+            <LineChart width={chartSize.width} height={chartSize.height} data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis
                 dataKey="date"
@@ -93,7 +127,7 @@ export function AnomalyChart({ data, anomalies }: AnomalyChartProps) {
                 />
               ))}
             </LineChart>
-          </ResponsiveContainer>
+          ) : null}
         </div>
       </CardContent>
     </Card>

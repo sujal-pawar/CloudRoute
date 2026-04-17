@@ -3,6 +3,7 @@
 import * as React from "react"
 import { toast } from "sonner"
 
+import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice"
 import { RecommendationCard } from "@/components/recommendations/RecommendationCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -24,6 +25,12 @@ type RecommendationsView = Recommendation & {
 
 type SortBy = "savings" | "effort" | "team"
 
+type ConnectRequiredResponse = {
+  error?: string
+  requiresConnection?: boolean
+  connectPath?: string
+}
+
 const EFFORT_ORDER: Record<RecommendationsView["effort"], number> = {
   low: 1,
   medium: 2,
@@ -36,6 +43,7 @@ export default function RecommendationsPage() {
   const [sortBy, setSortBy] = React.useState<SortBy>("savings")
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
   const [actingId, setActingId] = React.useState<string | null>(null)
 
   const loadRecommendations = React.useCallback(async () => {
@@ -44,6 +52,20 @@ export default function RecommendationsPage() {
         fetch("/api/recommendations", { cache: "no-store" }),
         fetch("/api/resources", { cache: "no-store" }),
       ])
+
+      const blockedResponse = [recsRes, resourcesRes].find((response) => response.status === 412)
+
+      if (blockedResponse) {
+        const payload = (await blockedResponse.json().catch(() => ({}))) as ConnectRequiredResponse
+        setConnectRequired({
+          error: payload.error,
+          requiresConnection: true,
+          connectPath: payload.connectPath ?? "/settings/cloud",
+        })
+        setRecommendations([])
+        setError(null)
+        return
+      }
 
       if (!recsRes.ok || !resourcesRes.ok) {
         throw new Error("Unable to load recommendations")
@@ -59,6 +81,7 @@ export default function RecommendationsPage() {
       }))
 
       setRecommendations(enriched)
+      setConnectRequired(null)
       setError(null)
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Recommendations error")
@@ -121,6 +144,16 @@ export default function RecommendationsPage() {
         },
         body: JSON.stringify({ recommendationId }),
       })
+
+      if (response.status === 412) {
+        const payload = (await response.json().catch(() => ({}))) as ConnectRequiredResponse
+        setConnectRequired({
+          error: payload.error,
+          requiresConnection: true,
+          connectPath: payload.connectPath ?? "/settings/cloud",
+        })
+        throw new Error(payload.error ?? "Connect a cloud account first")
+      }
 
       if (!response.ok) {
         throw new Error("Failed to act on recommendation")
@@ -205,6 +238,13 @@ export default function RecommendationsPage() {
         </div>
       ) : null}
 
+      {connectRequired?.requiresConnection ? (
+        <CloudConnectionNotice
+          message={connectRequired.error}
+          connectPath={connectRequired.connectPath}
+        />
+      ) : null}
+
       {loading ? (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Preparing rightsizing opportunities...</p>
@@ -220,7 +260,7 @@ export default function RecommendationsPage() {
             <Skeleton className="h-72 rounded-xl" />
           </div>
         </div>
-      ) : filteredRecommendations.length === 0 ? (
+      ) : connectRequired?.requiresConnection ? null : filteredRecommendations.length === 0 ? (
         <div className="rounded-xl border border-border/70 bg-card p-8 text-center text-sm text-muted-foreground">
           No recommendations match the selected filter.
         </div>

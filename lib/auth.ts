@@ -10,6 +10,11 @@ import {
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/auth-constants"
 import { getDatabase } from "@/lib/db"
+import {
+  decryptCloudCredentials,
+  encryptCloudCredentials,
+} from "@/lib/security/credentials-crypto"
+import type { CloudCredentials, DataSourceType } from "@/lib/types"
 
 const USERS_COLLECTION = "users"
 const SESSIONS_COLLECTION = "sessions"
@@ -26,12 +31,21 @@ interface DbSessionDocument {
   userId: ObjectId
   createdAt: Date
   expiresAt: Date
+  dataSource: DataSourceType
+  cloudCredentialsEncrypted: string | null
+  updatedAt: Date
 }
 
 export interface AuthUser {
   id: string
   username: string
   name: string
+}
+
+export interface AuthSessionContext {
+  user: AuthUser
+  dataSource: DataSourceType
+  cloudCredentials: CloudCredentials | null
 }
 
 let indexesReady = false
@@ -156,6 +170,9 @@ export async function createSession(userId: string) {
     userId: new ObjectId(userId),
     createdAt: now,
     expiresAt,
+    dataSource: "demo",
+    cloudCredentialsEncrypted: null,
+    updatedAt: now,
   }
 
   await sessions.insertOne(sessionDoc)
@@ -164,6 +181,13 @@ export async function createSession(userId: string) {
 }
 
 export async function getUserBySessionToken(token: string) {
+  const context = await getSessionContextByToken(token)
+  return context?.user ?? null
+}
+
+export async function getSessionContextByToken(
+  token: string
+): Promise<AuthSessionContext | null> {
   await ensureIndexes()
 
   const db = await getDatabase()
@@ -187,7 +211,47 @@ export async function getUserBySessionToken(token: string) {
     return null
   }
 
-  return sanitizeUser(user)
+  return {
+    user: sanitizeUser(user),
+    dataSource: session.dataSource ?? "demo",
+    cloudCredentials: decryptCloudCredentials(session.cloudCredentialsEncrypted),
+  }
+}
+
+export async function setSessionCloudConnection(
+  token: string,
+  input: {
+    dataSource: DataSourceType
+    cloudCredentials?: CloudCredentials | null
+  }
+): Promise<AuthSessionContext | null> {
+  await ensureIndexes()
+
+  const db = await getDatabase()
+  const sessions = db.collection<DbSessionDocument>(SESSIONS_COLLECTION)
+
+  const cloudCredentials =
+    input.dataSource === "demo" ? null : input.cloudCredentials ?? null
+  const cloudCredentialsEncrypted = cloudCredentials
+    ? encryptCloudCredentials(cloudCredentials)
+    : null
+
+  const updateResult = await sessions.updateOne(
+    { token },
+    {
+      $set: {
+        dataSource: input.dataSource,
+        cloudCredentialsEncrypted,
+        updatedAt: new Date(),
+      },
+    }
+  )
+
+  if (updateResult.matchedCount === 0) {
+    return null
+  }
+
+  return getSessionContextByToken(token)
 }
 
 export async function deleteSession(token: string) {

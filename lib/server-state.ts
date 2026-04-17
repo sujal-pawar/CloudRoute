@@ -2,37 +2,53 @@ import type { Recommendation, SavingsEntry } from "@/lib/types";
 
 type RecommendationState = Pick<Recommendation, "status" | "actedAt" | "actualSavingsToDate">;
 
-let recommendationStates: Record<string, RecommendationState> = {};
-let savingsEntries: SavingsEntry[] = [];
+let recommendationStatesByScope: Record<string, Record<string, RecommendationState>> = {};
+let savingsEntriesByScope: Record<string, SavingsEntry[]> = {};
 
-export function getRecommendationStates(): Record<string, RecommendationState> {
-  return { ...recommendationStates };
+export function getRecommendationStates(scopeKey = "global"): Record<string, RecommendationState> {
+  const scope = recommendationStatesByScope[scopeKey] ?? {};
+  return { ...scope };
 }
 
-export function markRecommendationActed(recommendation: Recommendation): Recommendation {
+export function markRecommendationActed(
+  recommendation: Recommendation,
+  scopeKey = "global"
+): Recommendation {
   const now = new Date();
   const actedAt = now.toISOString();
   const actualSavingsToDate = round2(recommendation.monthlySavings * 0.85);
+  const scopedRecommendationStates = recommendationStatesByScope[scopeKey] ?? {};
+  const scopedSavingsEntries = savingsEntriesByScope[scopeKey] ?? [];
 
-  recommendationStates = {
-    ...recommendationStates,
-    [recommendation.id]: {
-      status: "acted",
-      actedAt,
-      actualSavingsToDate,
+  recommendationStatesByScope = {
+    ...recommendationStatesByScope,
+    [scopeKey]: {
+      ...scopedRecommendationStates,
+      [recommendation.id]: {
+        status: "acted",
+        actedAt,
+        actualSavingsToDate,
+      },
     },
   };
 
-  const existingEntryIndex = savingsEntries.findIndex(
+  const existingEntryIndex = scopedSavingsEntries.findIndex(
     (entry) => entry.recommendationId === recommendation.id
   );
   const nextEntry = buildSavingsEntry(recommendation, actedAt);
+  let nextSavingsEntries: SavingsEntry[];
 
   if (existingEntryIndex >= 0) {
-    savingsEntries[existingEntryIndex] = nextEntry;
+    nextSavingsEntries = [...scopedSavingsEntries];
+    nextSavingsEntries[existingEntryIndex] = nextEntry;
   } else {
-    savingsEntries = [nextEntry, ...savingsEntries];
+    nextSavingsEntries = [nextEntry, ...scopedSavingsEntries];
   }
+
+  savingsEntriesByScope = {
+    ...savingsEntriesByScope,
+    [scopeKey]: nextSavingsEntries,
+  };
 
   return {
     ...recommendation,
@@ -42,8 +58,9 @@ export function markRecommendationActed(recommendation: Recommendation): Recomme
   };
 }
 
-export function getSavingsEntries(): SavingsEntry[] {
-  return [...savingsEntries];
+export function getSavingsEntries(scopeKey = "global"): SavingsEntry[] {
+  const scope = savingsEntriesByScope[scopeKey] ?? [];
+  return [...scope];
 }
 
 function buildSavingsEntry(recommendation: Recommendation, actedAtIso: string): SavingsEntry {

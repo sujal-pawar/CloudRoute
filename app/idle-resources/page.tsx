@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice"
 import { IdleResourceTable } from "@/components/idle/IdleResourceTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,6 +16,12 @@ type IdleResponse = {
   idleResources: IdleResource[]
 }
 
+type ConnectRequiredResponse = {
+  error?: string
+  requiresConnection?: boolean
+  connectPath?: string
+}
+
 type SelectedIdleResource = {
   resource: IdleResource
   number: number
@@ -24,6 +31,7 @@ export default function IdleResourcesPage() {
   const [resources, setResources] = React.useState<IdleResource[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
   const [selectedResource, setSelectedResource] = React.useState<SelectedIdleResource | null>(null)
 
   const [environment, setEnvironment] = React.useState("all")
@@ -36,12 +44,26 @@ export default function IdleResourcesPage() {
     const loadIdleResources = async () => {
       try {
         const response = await fetch("/api/idle", { cache: "no-store" })
+
+        if (response.status === 412) {
+          const payload = (await response.json().catch(() => ({}))) as ConnectRequiredResponse
+          setConnectRequired({
+            error: payload.error,
+            requiresConnection: true,
+            connectPath: payload.connectPath ?? "/settings/cloud",
+          })
+          setResources([])
+          setError(null)
+          return
+        }
+
         if (!response.ok) {
           throw new Error("Unable to load idle resources")
         }
 
         const payload = (await response.json()) as IdleResponse
         setResources(payload.idleResources)
+        setConnectRequired(null)
       } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : "Idle data error")
       } finally {
@@ -154,6 +176,13 @@ export default function IdleResourcesPage() {
         </div>
       ) : null}
 
+      {connectRequired?.requiresConnection ? (
+        <CloudConnectionNotice
+          message={connectRequired.error}
+          connectPath={connectRequired.connectPath}
+        />
+      ) : null}
+
       {loading ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
@@ -162,7 +191,7 @@ export default function IdleResourcesPage() {
           <Skeleton className="h-16 rounded-xl" />
           <Skeleton className="h-16 rounded-xl" />
         </div>
-      ) : (
+      ) : connectRequired?.requiresConnection ? null : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
           <IdleResourceTable
             resources={filteredResources}

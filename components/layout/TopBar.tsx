@@ -25,6 +25,7 @@ const pageTitles: Record<string, string> = {
   "/anomalies": "Anomalies",
   "/savings-tracker": "Savings Tracker",
   "/resources": "Resources",
+  "/settings/cloud": "Cloud Connection",
 }
 
 export function TopBar() {

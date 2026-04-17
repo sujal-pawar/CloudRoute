@@ -34,12 +34,16 @@ export default function AuthPage() {
   const [nextPath, setNextPath] = useState("/dashboard")
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const next = params.get("next")
+    const syncNextPath = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search)
+      const next = params.get("next")
 
-    if (next && next.startsWith("/")) {
-      setNextPath(next)
-    }
+      if (next && next.startsWith("/")) {
+        setNextPath(next)
+      }
+    }, 0)
+
+    return () => window.clearTimeout(syncNextPath)
   }, [])
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {

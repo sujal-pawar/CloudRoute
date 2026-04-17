@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation"
 import {
   ChevronUp,
   BellRing,
-  CircleGauge,
   CreditCard,
   LogOut,
   LayoutDashboard,
   PauseCircle,
   PiggyBank,
+  Cloud,
   Settings,
   Sparkles,
 } from "lucide-react"
@@ -47,6 +47,7 @@ const navItems = [
   { title: "Recommendations", href: "/recommendations", icon: Sparkles },
   { title: "Alerts", href: "/alerts", icon: BellRing },
   { title: "Savings Tracker", href: "/savings-tracker", icon: PiggyBank },
+  { title: "Cloud Connect", href: "/settings/cloud", icon: Cloud },
 ]
 
 interface CurrentUser {

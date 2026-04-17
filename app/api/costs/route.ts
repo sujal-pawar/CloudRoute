@@ -1,16 +1,25 @@
-import { COST_DATA } from "@/lib/mock-data/generator";
+import { getCostData } from "@/lib/adapters/data-source";
+import { createRequiresCloudConnectionResponse } from "@/lib/api/requires-cloud-connection";
+import { resolveDataSourceContext } from "@/lib/data-source-context";
 import { runAlertChecker } from "@/lib/engine/alert-checker";
 
 type GroupBy = "service" | "team" | "environment";
 
 export async function GET(request: Request) {
+  const context = await resolveDataSourceContext(request)
+
+  if (context.requiresConnection) {
+    return createRequiresCloudConnectionResponse(context)
+  }
+
   const { searchParams } = new URL(request.url);
   const periodParam = searchParams.get("period") ?? "30d";
   const groupByParam = (searchParams.get("groupBy") ?? "service") as GroupBy;
 
   const periodDays = parsePeriod(periodParam);
   const groupBy = parseGroupBy(groupByParam);
-  const selectedData = COST_DATA.slice(-periodDays);
+  const costData = await getCostData(context.source, context.credentials, 90)
+  const selectedData = costData.slice(-periodDays);
 
   const data = selectedData.map((point) => {
     const breakdown =
@@ -27,9 +36,10 @@ export async function GET(request: Request) {
     };
   });
 
-  const alertResult = runAlertChecker(COST_DATA);
+  const alertResult = runAlertChecker(costData, context.scopeKey);
 
   return Response.json({
+    source: context.source,
     period: periodParam,
     groupBy,
     count: data.length,

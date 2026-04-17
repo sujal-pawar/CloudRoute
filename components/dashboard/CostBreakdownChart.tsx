@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -60,6 +59,40 @@ export const CostBreakdownChart = React.memo(function CostBreakdownChart({
   environmentData,
 }: CostBreakdownChartProps) {
   const [groupBy, setGroupBy] = React.useState<GroupBy>("service")
+  const chartContainerRef = React.useRef<HTMLDivElement | null>(null)
+  const [chartSize, setChartSize] = React.useState({ width: 0, height: 0 })
+
+  React.useEffect(() => {
+    const node = chartContainerRef.current
+    if (!node) {
+      return
+    }
+
+    const updateFromRect = (width: number, height: number) => {
+      setChartSize({
+        width: Math.max(0, Math.floor(width)),
+        height: Math.max(0, Math.floor(height)),
+      })
+    }
+
+    const initialRect = node.getBoundingClientRect()
+    updateFromRect(initialRect.width, initialRect.height)
+
+    const observer = new ResizeObserver((entriesList) => {
+      const entry = entriesList[0]
+      if (!entry) {
+        return
+      }
+
+      updateFromRect(entry.contentRect.width, entry.contentRect.height)
+    })
+
+    observer.observe(node)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   const selectedData =
     groupBy === "service" ? serviceData : groupBy === "team" ? teamData : environmentData
@@ -89,9 +122,9 @@ export const CostBreakdownChart = React.memo(function CostBreakdownChart({
         </Tabs>
       </CardHeader>
       <CardContent>
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+        <div ref={chartContainerRef} className="h-80 w-full min-w-0">
+          {chartSize.width > 0 && chartSize.height > 0 ? (
+            <BarChart width={chartSize.width} height={chartSize.height} data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} minTickGap={20} />
               <YAxis
@@ -117,7 +150,7 @@ export const CostBreakdownChart = React.memo(function CostBreakdownChart({
                 />
               ))}
             </BarChart>
-          </ResponsiveContainer>
+          ) : null}
         </div>
       </CardContent>
     </Card>

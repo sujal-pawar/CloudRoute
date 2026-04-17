@@ -24,6 +24,11 @@ type AlertCheckResult = {
   breachedEvents: AlertEvent[];
 };
 
+type AlertState = {
+  rules: AlertRule[];
+  events: AlertEvent[];
+};
+
 const TEAM_BUDGETS: Record<Team, number> = {
   platform: 5200,
   backend: 8000,
@@ -48,48 +53,16 @@ const ENVIRONMENT_BUDGETS: Record<Environment, number> = {
   development: 5000,
 };
 
-let alertRules: AlertRule[] = [
-  {
-    id: "rule-total-1",
-    name: "Total Spend Guardrail",
-    scope: "total",
-    scopeValue: "total",
-    threshold: 30000,
-    thresholdType: "absolute",
-    currentSpend: 0,
-    breached: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "rule-prod-1",
-    name: "Production Spend Guardrail",
-    scope: "environment",
-    scopeValue: "production",
-    threshold: 19000,
-    thresholdType: "absolute",
-    currentSpend: 0,
-    breached: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "rule-backend-1",
-    name: "Backend Budget Watch",
-    scope: "team",
-    scopeValue: "backend",
-    threshold: 7600,
-    thresholdType: "absolute",
-    currentSpend: 0,
-    breached: false,
-    createdAt: new Date().toISOString(),
-  },
-];
+const alertStateByScope: Record<string, AlertState> = {};
 
-let alertEvents: AlertEvent[] = [];
-
-export function runAlertChecker(costData: CostDataPoint[]): AlertCheckResult {
+export function runAlertChecker(
+  costData: CostDataPoint[],
+  scopeKey = "global"
+): AlertCheckResult {
+  const state = getAlertState(scopeKey);
   const breachedEvents: AlertEvent[] = [];
 
-  alertRules = alertRules.map((rule) => {
+  state.rules = state.rules.map((rule) => {
     const currentSpend = round2(calculateCurrentSpend(rule, costData));
     const threshold = resolveThreshold(rule);
     const shouldBreach = currentSpend >= threshold;
@@ -97,7 +70,7 @@ export function runAlertChecker(costData: CostDataPoint[]): AlertCheckResult {
     if (shouldBreach && !rule.breached) {
       const triggeredAt = new Date().toISOString();
       const event: AlertEvent = {
-        id: `alert-event-${alertEvents.length + 1}`,
+        id: `alert-event-${state.events.length + 1}`,
         ruleId: rule.id,
         ruleName: rule.name,
         triggeredAt,
@@ -106,7 +79,7 @@ export function runAlertChecker(costData: CostDataPoint[]): AlertCheckResult {
         message: `${rule.name} breached: $${currentSpend} >= $${threshold}`,
       };
 
-      alertEvents = [event, ...alertEvents].slice(0, 200);
+      state.events = [event, ...state.events].slice(0, 200);
       breachedEvents.push(event);
 
       return {
@@ -125,13 +98,15 @@ export function runAlertChecker(costData: CostDataPoint[]): AlertCheckResult {
   });
 
   return {
-    rules: listAlertRules(costData),
+    rules: listAlertRules(costData, scopeKey),
     breachedEvents,
   };
 }
 
-export function listAlertRules(costData: CostDataPoint[]): AlertRule[] {
-  return alertRules.map((rule) => {
+export function listAlertRules(costData: CostDataPoint[], scopeKey = "global"): AlertRule[] {
+  const state = getAlertState(scopeKey);
+
+  return state.rules.map((rule) => {
     const currentSpend = round2(calculateCurrentSpend(rule, costData));
     const threshold = resolveThreshold(rule);
 
@@ -143,11 +118,17 @@ export function listAlertRules(costData: CostDataPoint[]): AlertRule[] {
   });
 }
 
-export function listAlertEvents(): AlertEvent[] {
-  return [...alertEvents];
+export function listAlertEvents(scopeKey = "global"): AlertEvent[] {
+  const state = getAlertState(scopeKey);
+  return [...state.events];
 }
 
-export function createAlertRule(input: NewAlertRuleInput, costData: CostDataPoint[]): AlertRule {
+export function createAlertRule(
+  input: NewAlertRuleInput,
+  costData: CostDataPoint[],
+  scopeKey = "global"
+): AlertRule {
+  const state = getAlertState(scopeKey);
   const scopeValue = input.scope === "total" ? "total" : (input.scopeValue ?? "").trim();
 
   if (!scopeValue) {
@@ -155,7 +136,7 @@ export function createAlertRule(input: NewAlertRuleInput, costData: CostDataPoin
   }
 
   const newRule: AlertRule = {
-    id: `rule-${alertRules.length + 1}-${Date.now()}`,
+    id: `rule-${state.rules.length + 1}-${Date.now()}`,
     name: input.name.trim(),
     scope: input.scope,
     scopeValue,
@@ -166,10 +147,10 @@ export function createAlertRule(input: NewAlertRuleInput, costData: CostDataPoin
     createdAt: new Date().toISOString(),
   };
 
-  alertRules = [newRule, ...alertRules];
-  runAlertChecker(costData);
+  state.rules = [newRule, ...state.rules];
+  runAlertChecker(costData, scopeKey);
 
-  const created = alertRules.find((rule) => rule.id === newRule.id);
+  const created = state.rules.find((rule) => rule.id === newRule.id);
   if (!created) {
     throw new Error("Failed to create alert rule");
   }
@@ -180,15 +161,17 @@ export function createAlertRule(input: NewAlertRuleInput, costData: CostDataPoin
 export function updateAlertRule(
   id: string,
   input: UpdateAlertRuleInput,
-  costData: CostDataPoint[]
+  costData: CostDataPoint[],
+  scopeKey = "global"
 ): AlertRule {
-  const index = alertRules.findIndex((rule) => rule.id === id);
+  const state = getAlertState(scopeKey);
+  const index = state.rules.findIndex((rule) => rule.id === id);
 
   if (index === -1) {
     throw new Error("Alert rule not found");
   }
 
-  const current = alertRules[index];
+  const current = state.rules[index];
   const nextScope = input.scope ?? current.scope;
   const nextScopeValue =
     nextScope === "total"
@@ -202,7 +185,7 @@ export function updateAlertRule(
   const nextThreshold =
     typeof input.threshold === "number" ? round2(input.threshold) : current.threshold;
 
-  alertRules[index] = {
+  state.rules[index] = {
     ...current,
     ...input,
     scope: nextScope,
@@ -213,15 +196,67 @@ export function updateAlertRule(
     breached: false,
   };
 
-  runAlertChecker(costData);
+  runAlertChecker(costData, scopeKey);
 
-  return alertRules[index];
+  return state.rules[index];
 }
 
-export function deleteAlertRule(id: string): boolean {
-  const previousLength = alertRules.length;
-  alertRules = alertRules.filter((rule) => rule.id !== id);
-  return alertRules.length !== previousLength;
+export function deleteAlertRule(id: string, scopeKey = "global"): boolean {
+  const state = getAlertState(scopeKey);
+  const previousLength = state.rules.length;
+  state.rules = state.rules.filter((rule) => rule.id !== id);
+  return state.rules.length !== previousLength;
+}
+
+function getAlertState(scopeKey: string): AlertState {
+  if (!alertStateByScope[scopeKey]) {
+    alertStateByScope[scopeKey] = {
+      rules: createDefaultAlertRules(),
+      events: [],
+    };
+  }
+
+  return alertStateByScope[scopeKey];
+}
+
+function createDefaultAlertRules(): AlertRule[] {
+  const createdAt = new Date().toISOString();
+
+  return [
+    {
+      id: "rule-total-1",
+      name: "Total Spend Guardrail",
+      scope: "total",
+      scopeValue: "total",
+      threshold: 30000,
+      thresholdType: "absolute",
+      currentSpend: 0,
+      breached: false,
+      createdAt,
+    },
+    {
+      id: "rule-prod-1",
+      name: "Production Spend Guardrail",
+      scope: "environment",
+      scopeValue: "production",
+      threshold: 19000,
+      thresholdType: "absolute",
+      currentSpend: 0,
+      breached: false,
+      createdAt,
+    },
+    {
+      id: "rule-backend-1",
+      name: "Backend Budget Watch",
+      scope: "team",
+      scopeValue: "backend",
+      threshold: 7600,
+      thresholdType: "absolute",
+      currentSpend: 0,
+      breached: false,
+      createdAt,
+    },
+  ];
 }
 
 function calculateCurrentSpend(rule: AlertRule, costData: CostDataPoint[]): number {

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AlertRuleForm, type AlertRuleDraft } from "@/components/alerts/AlertRuleForm";
 import { AlertRuleList } from "@/components/alerts/AlertRuleList";
+import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AlertEvent, AlertRule } from "@/lib/types";
 
@@ -12,6 +13,8 @@ type AlertsApiPayload = {
   rules?: AlertRule[];
   events?: AlertEvent[];
   error?: string;
+  requiresConnection?: boolean;
+  connectPath?: string;
 };
 
 export default function AlertsPage() {
@@ -21,6 +24,10 @@ export default function AlertsPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [busyRuleId, setBusyRuleId] = React.useState<string | null>(null);
   const [editingRule, setEditingRule] = React.useState<AlertRule | undefined>(undefined);
+  const [connectRequired, setConnectRequired] = React.useState<{
+    message?: string;
+    connectPath?: string;
+  } | null>(null);
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -29,12 +36,23 @@ export default function AlertsPage() {
       const response = await fetch("/api/alerts", { cache: "no-store" });
       const payload = (await response.json()) as AlertsApiPayload;
 
+      if (response.status === 412) {
+        setConnectRequired({
+          message: payload.error,
+          connectPath: payload.connectPath ?? "/settings/cloud",
+        });
+        setRules([]);
+        setEvents([]);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(payload.error ?? "Failed to load alerts");
       }
 
       setRules(payload.rules ?? []);
       setEvents(payload.events ?? []);
+      setConnectRequired(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to load alerts";
       toast.error("Unable to load alerts", { description: message });
@@ -143,6 +161,11 @@ export default function AlertsPage() {
             <Skeleton className="h-10 rounded-xl" />
           </div>
         </div>
+      ) : connectRequired ? (
+        <CloudConnectionNotice
+          message={connectRequired.message}
+          connectPath={connectRequired.connectPath}
+        />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <AlertRuleList

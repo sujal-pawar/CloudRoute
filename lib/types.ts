@@ -8,6 +8,33 @@ export type Team =
   | "security"
   | "devops";
 export type ResourceStatus = "active" | "idle" | "stopped" | "terminated";
+export type DataSourceType = "demo" | "aws" | "azure" | "gcp";
+export type CloudProvider = Exclude<DataSourceType, "demo">;
+
+export interface CloudCredentials {
+  provider: CloudProvider;
+  label?: string;
+  // AWS
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string;
+  region?: string;
+  // Azure
+  subscriptionId?: string;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string;
+  // GCP
+  projectId?: string;
+  serviceAccountKey?: string;
+}
+
+export interface UserSession {
+  userId: string;
+  email?: string;
+  dataSource: DataSourceType;
+  cloudCredentials?: CloudCredentials | null;
+}
 
 export interface CloudResource {
   id: string;

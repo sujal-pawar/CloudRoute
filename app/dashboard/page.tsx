@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice"
 import { Skeleton } from "@/components/ui/skeleton"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { CostTrendChart } from "@/components/dashboard/CostTrendChart"
@@ -43,6 +44,12 @@ type RecommendationsResponse = {
 
 type AnomaliesResponse = {
   anomalies: CostAnomaly[]
+}
+
+type ConnectRequiredResponse = {
+  error?: string
+  requiresConnection?: boolean
+  connectPath?: string
 }
 
 type DashboardState = {
@@ -83,6 +90,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null)
+  const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
   const selectedTeam = useAppStore((store) => store.selectedTeam)
   const activeTeam: Team | null = selectedTeam === "all-teams" ? null : selectedTeam
 
@@ -122,9 +130,27 @@ export default function DashboardPage() {
         anomaliesRes,
       ]
 
+      const blockedResponse = responses.find((response) => response.status === 412)
+
+      if (blockedResponse) {
+        const payload = (await blockedResponse.json().catch(() => ({}))) as ConnectRequiredResponse
+
+        setConnectRequired({
+          error: payload.error,
+          requiresConnection: true,
+          connectPath: payload.connectPath ?? "/settings/cloud",
+        })
+        setState(EMPTY_STATE)
+        setLastUpdated(null)
+        setError(null)
+        return
+      }
+
       if (responses.some((response) => !response.ok)) {
         throw new Error("Unable to load dashboard data")
       }
+
+      setConnectRequired(null)
 
       const [
         trend90d,
@@ -342,9 +368,16 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
+      {connectRequired?.requiresConnection ? (
+        <CloudConnectionNotice
+          message={connectRequired.error}
+          connectPath={connectRequired.connectPath}
+        />
+      ) : null}
+
       {showInitialSkeleton ? (
         <DashboardSkeleton />
-      ) : (
+      ) : connectRequired?.requiresConnection ? null : (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <KPICard

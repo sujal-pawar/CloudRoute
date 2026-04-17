@@ -1,4 +1,6 @@
-import { COST_DATA } from "@/lib/mock-data/generator";
+import { getCostData } from "@/lib/adapters/data-source"
+import { createRequiresCloudConnectionResponse } from "@/lib/api/requires-cloud-connection"
+import { resolveDataSourceContext } from "@/lib/data-source-context"
 import {
   createAlertRule,
   listAlertEvents,
@@ -15,13 +17,24 @@ type CreateAlertBody = {
   thresholdType?: AlertRule["thresholdType"];
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const context = await resolveDataSourceContext(request)
+
+  if (context.requiresConnection) {
+    return createRequiresCloudConnectionResponse(context)
+  }
+
+  const costData = await getCostData(context.source, context.credentials, 90)
   // Ensure default rules are evaluated so breach history is populated for demo views.
-  const result = runAlertChecker(COST_DATA);
-  const rules = result.rules.length > 0 ? result.rules : listAlertRules(COST_DATA);
-  const events = listAlertEvents();
+  const result = runAlertChecker(costData, context.scopeKey);
+  const rules =
+    result.rules.length > 0
+      ? result.rules
+      : listAlertRules(costData, context.scopeKey);
+  const events = listAlertEvents(context.scopeKey);
 
   return Response.json({
+    source: context.source,
     count: rules.length,
     rules,
     events,
@@ -29,6 +42,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const context = await resolveDataSourceContext(request)
+
+  if (context.requiresConnection) {
+    return createRequiresCloudConnectionResponse(context)
+  }
+
+  const costData = await getCostData(context.source, context.credentials, 90)
   const body = (await request.json()) as CreateAlertBody;
 
   if (!body.name || !body.scope || typeof body.threshold !== "number") {
@@ -47,12 +67,14 @@ export async function POST(request: Request) {
         threshold: body.threshold,
         thresholdType: body.thresholdType,
       },
-      COST_DATA
+      costData,
+      context.scopeKey
     );
 
-    const result = runAlertChecker(COST_DATA);
+    const result = runAlertChecker(costData, context.scopeKey);
 
     return Response.json({
+      source: context.source,
       rule,
       newlyBreached: result.breachedEvents,
     });

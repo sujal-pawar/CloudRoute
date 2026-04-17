@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { CloudConnectionNotice } from "@/components/layout/CloudConnectionNotice"
 import { SavingsTimeline } from "@/components/savings/SavingsTimeline"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -22,15 +23,34 @@ type SavingsResponse = {
   count: number
 }
 
+type ConnectRequiredResponse = {
+  error?: string
+  requiresConnection?: boolean
+  connectPath?: string
+}
+
 export default function SavingsTrackerPage() {
   const [entries, setEntries] = React.useState<SavingsEntry[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
 
   React.useEffect(() => {
     const initialLoad = window.setTimeout(async () => {
       try {
         const response = await fetch("/api/savings", { cache: "no-store" })
+
+        if (response.status === 412) {
+          const payload = (await response.json().catch(() => ({}))) as ConnectRequiredResponse
+          setConnectRequired({
+            error: payload.error,
+            requiresConnection: true,
+            connectPath: payload.connectPath ?? "/settings/cloud",
+          })
+          setEntries([])
+          setError(null)
+          return
+        }
 
         if (!response.ok) {
           throw new Error("Unable to load savings tracker data")
@@ -38,6 +58,7 @@ export default function SavingsTrackerPage() {
 
         const payload = (await response.json()) as SavingsResponse
         setEntries(payload.savings)
+        setConnectRequired(null)
         setError(null)
       } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : "Savings tracker error")
@@ -83,9 +104,16 @@ export default function SavingsTrackerPage() {
         </div>
       ) : null}
 
+      {connectRequired?.requiresConnection ? (
+        <CloudConnectionNotice
+          message={connectRequired.error}
+          connectPath={connectRequired.connectPath}
+        />
+      ) : null}
+
       {loading ? (
         <SavingsTrackerSkeleton />
-      ) : (
+      ) : connectRequired?.requiresConnection ? null : (
         <>
           <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 md:grid-cols-3">
             <MetricCard label="Total Projected Savings" value={formatCurrency(metrics.totalProjectedMonthly)} />
