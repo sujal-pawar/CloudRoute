@@ -12,6 +12,11 @@ import {
   fetchAzureSeededAnomalyEvents,
 } from "@/lib/adapters/azure-adapter"
 import {
+  fetchGCPCostData,
+  fetchGCPResources,
+  fetchGCPSeededAnomalyEvents,
+} from "@/lib/adapters/gcp-adapter"
+import {
   fetchDemoCostData,
   fetchDemoResources,
   fetchDemoSeededAnomalyEvents,
@@ -33,7 +38,11 @@ export async function getResources(
     return fetchAzureResources(credentials)
   }
 
-  return fetchDemoResources()
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPResources(credentials)
+  }
+
+  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
 }
 
 export async function getCostData(
@@ -53,7 +62,11 @@ export async function getCostData(
     return fetchAzureCostData(credentials, days)
   }
 
-  return fetchDemoCostData(days)
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPCostData(credentials, days)
+  }
+
+  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
 }
 
 export async function getSeededAnomalyEvents(
@@ -72,5 +85,9 @@ export async function getSeededAnomalyEvents(
     return fetchAzureSeededAnomalyEvents(credentials)
   }
 
-  return fetchDemoSeededAnomalyEvents()
+  if (source === "gcp" && credentials?.provider === "gcp") {
+    return fetchGCPSeededAnomalyEvents(credentials)
+  }
+
+  throw new Error(`Unsupported data source/provider combination: source='${source}', provider='${credentials.provider}'`)
 }
