@@ -104,10 +104,7 @@ export function TopBar() {
           ) : null}
           <span className="sr-only">Alerts</span>
         </Button>
-
-        <div className="hidden rounded-full border px-3 py-1 text-xs text-muted-foreground md:block">
-          {isDark ? "Dark mode" : "Light mode"}
-        </div>
+        
         <Button
           type="button"
           variant="outline"
@@ -116,7 +113,7 @@ export function TopBar() {
           onClick={() => setTheme(isDark ? "light" : "dark")}
         >
           {isDark ? <SunMedium className="size-4" /> : <Moon className="size-4" />}
-          <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
+          
         </Button>
       </div>
     </header>
