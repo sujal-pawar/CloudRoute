@@ -15,7 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isPublicPath(pathname)) {
     return (
-      <main className="min-h-svh overflow-y-auto overflow-x-hidden">
+      <main className="h-svh overflow-y-auto overflow-x-hidden">
         {children}
       </main>
     )

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, LoaderCircle, ShieldCheck } from "lucide-react"
+import { ArrowLeft, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -96,22 +96,77 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-[radial-gradient(circle_at_top,hsl(197_98%_53%/0.18),transparent_50%),radial-gradient(circle_at_bottom_right,hsl(217_91%_60%/0.18),transparent_55%),hsl(222_45%_8%)] px-4 py-10 text-white">
+    <div className="relative min-h-svh bg-[radial-gradient(circle_at_top,hsl(197_98%_53%/0.18),transparent_50%),radial-gradient(circle_at_bottom_right,hsl(217_91%_60%/0.18),transparent_55%),hsl(222_45%_8%)] px-4 py-8 text-white sm:py-10">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.06),transparent)] opacity-25" />
 
-      <div className="relative mx-auto flex w-full max-w-5xl items-center justify-between gap-8">
-        <div className="hidden max-w-md space-y-5 lg:block">
+      <div className="relative mx-auto w-full max-w-6xl">
+        <header className="sticky top-4 z-20 mb-8 flex items-center justify-between rounded-2xl border border-white/15 bg-slate-950/55 px-4 py-3 backdrop-blur-xl">
+          <div className="flex items-center gap-2">
+            <span className="text-xl text-cyan-300">▲</span>
+            <div>
+              <p className="text-sm font-semibold tracking-wide">CloudRoute</p>
+              <p className="text-xs text-white/70">Secure access</p>
+            </div>
+          </div>
+
+          <nav className="flex items-center gap-2">
+            <Button
+              asChild
+              variant="ghost"
+              className="h-8 text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <Link href="/">Home</Link>
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "login" ? "default" : "ghost"}
+              className={
+                mode === "login"
+                  ? "h-8 bg-cyan-400 px-4 text-slate-950 hover:bg-cyan-300"
+                  : "h-8 text-white/80 hover:bg-white/10 hover:text-white"
+              }
+              onClick={() => setMode("login")}
+            >
+              Login
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "signup" ? "default" : "ghost"}
+              className={
+                mode === "signup"
+                  ? "h-8 bg-cyan-400 px-4 text-slate-950 hover:bg-cyan-300"
+                  : "h-8 text-white/80 hover:bg-white/10 hover:text-white"
+              }
+              onClick={() => setMode("signup")}
+            >
+              Sign up
+            </Button>
+          </nav>
+        </header>
+
+        <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-xl space-y-5">
           <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/80">
             <ShieldCheck className="size-3.5" />
             CloudRoute Access
           </p>
-          <h1 className="font-heading text-4xl leading-tight font-semibold">
+          <h1 className="font-heading text-3xl leading-tight font-semibold sm:text-4xl lg:text-5xl">
             Secure sign in for your cloud cost command center.
           </h1>
-          <p className="text-sm text-white/75">
+          <p className="max-w-lg text-sm text-white/75 sm:text-base">
             Use your username and password to access dashboards, anomaly alerts,
             and team optimization workflows.
           </p>
+          <div className="grid max-w-lg grid-cols-2 gap-3 text-sm text-white/75">
+            <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+              <p className="font-medium text-cyan-100">Fast onboarding</p>
+              <p className="mt-1 text-xs text-white/65">Create account and access insights in under a minute.</p>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+              <p className="font-medium text-cyan-100">Safe sessions</p>
+              <p className="mt-1 text-xs text-white/65">Cookie-based auth with server-managed sessions.</p>
+            </div>
+          </div>
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm text-cyan-200 transition hover:text-cyan-100"
@@ -121,8 +176,12 @@ export default function AuthPage() {
           </Link>
         </div>
 
-        <Card className="w-full max-w-md border border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-md">
-          <CardHeader>
+        <Card className="w-full max-w-md border border-white/15 bg-slate-950/45 text-white shadow-2xl backdrop-blur-xl">
+          <CardHeader className="space-y-3">
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+              <Sparkles className="size-3" />
+              Team workspace
+            </div>
             <CardTitle className="text-xl">Sign in to CloudRoute</CardTitle>
             <CardDescription className="text-white/75">
               Login or create an account to continue.
@@ -134,9 +193,13 @@ export default function AuthPage() {
               onValueChange={(value) => setMode(value as AuthMode)}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 bg-white/10">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-white/10 p-1">
+                <TabsTrigger value="login" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
+                  Sign up
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="mt-5">
@@ -256,6 +319,7 @@ export default function AuthPage() {
             </Tabs>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   )
