@@ -3,11 +3,9 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { TopBar } from "@/components/layout/TopBar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarNav } from "@/components/layout/Sidebar";
 import { AlertToaster } from "@/components/layout/AlertToaster";
+import { AppShell } from "@/components/layout/AppShell";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -22,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinOps Cloud Cost Dashboard",
+  title: "CloudRoute",
   description: "Cloud cost optimization dashboard for Hack Carnival 2026",
 };
 
@@ -47,15 +45,7 @@ export default function RootLayout({
       <body className="h-svh overflow-hidden">
         <ThemeProvider>
           <TooltipProvider>
-            <SidebarProvider className="h-svh overflow-hidden">
-              <SidebarNav />
-              <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-                <TopBar />
-                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar-hidden">
-                  {children}
-                </main>
-              </SidebarInset>
-            </SidebarProvider>
+            <AppShell>{children}</AppShell>
             <AlertToaster />
           </TooltipProvider>
         </ThemeProvider>

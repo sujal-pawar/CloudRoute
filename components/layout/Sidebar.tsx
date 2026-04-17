@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -48,8 +49,65 @@ const navItems = [
   { title: "Savings Tracker", href: "/savings-tracker", icon: PiggyBank },
 ]
 
+interface CurrentUser {
+  name: string
+  username: string
+}
+
 export function SidebarNav() {
   const pathname = usePathname()
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadUser() {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" })
+
+        if (!response.ok) {
+          return
+        }
+
+        const data = await response.json()
+
+        if (isMounted && data?.user) {
+          setCurrentUser({
+            name: data.user.name,
+            username: data.user.username,
+          })
+        }
+      } catch {
+        // Ignore profile request failures in the shell.
+      }
+    }
+
+    void loadUser()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const avatarFallback = useMemo(() => {
+    const source = currentUser?.name || currentUser?.username || "CR"
+    return source
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("")
+  }, [currentUser])
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      })
+    } finally {
+      window.location.href = "/auth"
+    }
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -58,7 +116,7 @@ export function SidebarNav() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard">
-              <span className="text-[#a855f7] drop-shadow-[0_0_10px_rgba(168,85,247,0.45)] text-3xl" >▲</span>
+              <span className="text-[#367df9] drop-shadow-[0_0_10px_rgba(168,85,247,0.45)] text-3xl" >▲</span>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-semibold">CloudRoute</span>
                   <span className="truncate text-xs text-zinc-500 ">Cost optimization </span>
@@ -101,12 +159,12 @@ export function SidebarNav() {
                 <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                   <Avatar className="size-8 rounded-lg">
                     <AvatarFallback className="rounded-lg bg-linear-to-br from-cyan-500 to-violet-500 text-[10px] font-semibold text-white">
-                      CR
+                      {avatarFallback}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate font-semibold">Name</span>
-                    <span className="truncate text-xs text-sidebar-foreground/70">@userlogin</span>
+                    <span className="truncate font-semibold">{currentUser?.name || "Name"}</span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">@{currentUser?.username || "userlogin"}</span>
                   </div>
                   <ChevronUp className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
@@ -120,12 +178,12 @@ export function SidebarNav() {
                   <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
                     <Avatar className="size-8 rounded-lg">
                       <AvatarFallback className="rounded-lg bg-linear-to-br from-cyan-500 to-blue-500 text-[10px] font-semibold text-white">
-                        CR
+                        {avatarFallback}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left leading-tight">
-                      <span className="truncate font-semibold">Name</span>
-                      <span className="truncate text-xs text-muted-foreground">@userlogin</span>
+                      <span className="truncate font-semibold">{currentUser?.name || "Name"}</span>
+                      <span className="truncate text-xs text-muted-foreground">@{currentUser?.username || "userlogin"}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -141,7 +199,7 @@ export function SidebarNav() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut />
                   Log out
                 </DropdownMenuItem>

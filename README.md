@@ -22,22 +22,33 @@ and realized-vs-projected savings tracking.
 npm install
 ```
 
-2. Start the dev server:
+2. Create `.env.local` using `.env.example` as a template.
+
+Set your MongoDB values in `.env.local`:
+
+```text
+MONGODB_URI=your-mongodb-connection-string
+MONGODB_DB_NAME=cloudroute
+```
+
+3. Start the dev server:
 
 ```bash
 npm run dev
 ```
 
-3. Open:
+4. Open:
 
 ```text
 http://localhost:3000
 ```
 
-The home route redirects to `/dashboard`.
+The home route is a public landing page. Authentication is available at `/auth`.
 
 ## Main Pages
 
+- `/`: landing page.
+- `/auth`: combined login/signup page.
 - `/dashboard`: KPI overview, cost trends, breakdown charts, team optimization table.
 - `/idle-resources`: sortable list of idle/stopped resources and estimated monthly waste.
 - `/recommendations`: actionable optimization recommendations with quick actions.
@@ -54,6 +65,10 @@ The home route redirects to `/dashboard`.
 
 ## API Overview
 
+- `POST /api/auth/signup`: create a user and sign in.
+- `POST /api/auth/login`: login with username and password.
+- `POST /api/auth/logout`: clear active session cookie.
+- `GET /api/auth/me`: fetch current authenticated user.
 - `GET /api/costs`: cost time series (`period`, `groupBy`).
 - `GET /api/resources`: cloud resource inventory.
 - `GET /api/idle`: idle/stopped resource opportunities.
