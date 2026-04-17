@@ -78,29 +78,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
 
       return freshAlerts
+    } catch {
+      return []
     } finally {
       set({ isAlertSyncing: false })
     }
   },
 
   loadAlertHistory: async () => {
-    const response = await fetch("/api/alerts", { cache: "no-store" })
-    if (!response.ok) {
-      return
+    try {
+      const response = await fetch("/api/alerts", { cache: "no-store" })
+      if (!response.ok) {
+        return
+      }
+
+      const payload = (await response.json()) as AlertsResponse
+      const events = payload.events ?? []
+
+      set((current) => {
+        if (current.alertEvents.length > 0) {
+          return current
+        }
+
+        return {
+          ...current,
+          alertEvents: events,
+        }
+      })
+    } catch {
+      // Ignore transient polling failures.
     }
-
-    const payload = (await response.json()) as AlertsResponse
-    const events = payload.events ?? []
-
-    set((current) => {
-      if (current.alertEvents.length > 0) {
-        return current
-      }
-
-      return {
-        ...current,
-        alertEvents: events,
-      }
-    })
   },
 }))

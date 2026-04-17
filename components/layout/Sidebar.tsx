@@ -66,11 +66,18 @@ export function SidebarNav() {
       try {
         const response = await fetch("/api/auth/me", { cache: "no-store" })
 
+        if (response.status === 401) {
+          if (isMounted) {
+            setCurrentUser(null)
+          }
+          return
+        }
+
         if (!response.ok) {
           return
         }
 
-        const data = await response.json()
+        const data = await response.json().catch(() => null)
 
         if (isMounted && data?.user) {
           setCurrentUser({
@@ -104,6 +111,7 @@ export function SidebarNav() {
     try {
       await fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "same-origin",
       })
     } finally {
       window.location.href = "/auth"

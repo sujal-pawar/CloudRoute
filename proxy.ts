@@ -11,10 +11,6 @@ export function proxy(request: NextRequest) {
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value
   const isAuthenticated = Boolean(sessionToken)
 
-  if (pathname.startsWith("/auth") && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
-  }
-
   if (!isPublicPath(pathname) && !isAuthenticated) {
     const destination = new URL("/auth", request.url)
     destination.searchParams.set("next", pathname)
