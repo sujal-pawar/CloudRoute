@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null)
+  const [lastUpdatedNow, setLastUpdatedNow] = React.useState(() => Date.now())
   const [connectRequired, setConnectRequired] = React.useState<ConnectRequiredResponse | null>(null)
   const selectedTeam = useAppStore((store) => store.selectedTeam)
   const activeTeam: Team | null = selectedTeam === "all-teams" ? null : selectedTeam
@@ -209,6 +210,16 @@ export default function DashboardPage() {
       window.clearInterval(interval)
     }
   }, [refreshDashboard])
+
+  React.useEffect(() => {
+    const ticker = window.setInterval(() => {
+      setLastUpdatedNow(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(ticker)
+    }
+  }, [])
 
   const filteredTrend90d = React.useMemo(() => {
     if (!activeTeam) {
@@ -349,7 +360,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">Cloud Cost Overview</h1>
           <p className="text-sm text-muted-foreground">
             {lastUpdated
-              ? `Last updated at ${lastUpdated.toLocaleTimeString()}`
+              ? `Last updated: ${formatSecondsAgo(lastUpdatedNow - lastUpdated.getTime())} ago`
               : "Loading data..."}
           </p>
           {activeTeam ? (
@@ -536,4 +547,16 @@ function calculateScore(
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+function formatSecondsAgo(diffMs: number): string {
+  const seconds = Math.max(0, Math.floor(diffMs / 1000))
+
+  if (seconds < 60) {
+    return `${seconds}s`
+  }
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes}m ${remainingSeconds}s`
 }

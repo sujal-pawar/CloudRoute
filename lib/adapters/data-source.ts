@@ -21,6 +21,10 @@ export async function getResources(
   source: DataSourceType,
   credentials?: CloudCredentials
 ): Promise<CloudResource[]> {
+  if (source === "demo" || !credentials) {
+    return fetchDemoResources()
+  }
+
   if (source === "aws" && credentials?.provider === "aws") {
     return fetchAWSResources(credentials)
   }
@@ -37,6 +41,10 @@ export async function getCostData(
   credentials?: CloudCredentials,
   days = 90
 ): Promise<CostDataPoint[]> {
+  if (source === "demo" || !credentials) {
+    return fetchDemoCostData(days)
+  }
+
   if (source === "aws" && credentials?.provider === "aws") {
     return fetchAWSCostData(credentials, days)
   }
@@ -52,6 +60,10 @@ export async function getSeededAnomalyEvents(
   source: DataSourceType,
   credentials?: CloudCredentials
 ): Promise<SeededAnomalyEvent[]> {
+  if (source === "demo" || !credentials) {
+    return fetchDemoSeededAnomalyEvents()
+  }
+
   if (source === "aws" && credentials?.provider === "aws") {
     return fetchAWSSeededAnomalyEvents(credentials)
   }
