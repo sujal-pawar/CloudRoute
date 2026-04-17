@@ -44,14 +44,16 @@ export default function RootLayout({
         inter.variable
       )}
     >
-      <body className="min-h-svh" suppressHydrationWarning>
+      <body className="h-svh overflow-hidden">
         <ThemeProvider>
           <TooltipProvider>
-            <SidebarProvider>
+            <SidebarProvider className="h-svh overflow-hidden">
               <SidebarNav />
-              <SidebarInset>
+              <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
                 <TopBar />
-                <main className="flex flex-1 flex-col">{children}</main>
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar-hidden">
+                  {children}
+                </main>
               </SidebarInset>
             </SidebarProvider>
             <AlertToaster />

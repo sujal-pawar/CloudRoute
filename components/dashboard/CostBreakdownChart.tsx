@@ -132,7 +132,12 @@ export function CostBreakdownChart({
                 width={80}
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip
+                formatter={(value) => {
+                  const numeric = typeof value === "number" ? value : Number(value ?? 0)
+                  return formatCurrency(numeric)
+                }}
+              />
               <Legend />
               {keys.map((key) => (
                 <Bar

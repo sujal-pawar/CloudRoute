@@ -2,6 +2,8 @@
 
 import * as React from "react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { IdleResourceTable } from "@/components/idle/IdleResourceTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { IdleResource } from "@/lib/types"
@@ -11,10 +13,16 @@ type IdleResponse = {
   idleResources: IdleResource[]
 }
 
+type SelectedIdleResource = {
+  resource: IdleResource
+  number: number
+}
+
 export default function IdleResourcesPage() {
   const [resources, setResources] = React.useState<IdleResource[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [selectedResource, setSelectedResource] = React.useState<SelectedIdleResource | null>(null)
 
   const [environment, setEnvironment] = React.useState("all")
   const [resourceType, setResourceType] = React.useState("all")
@@ -55,7 +63,7 @@ export default function IdleResourcesPage() {
   const totalWaste = filteredResources.reduce((sum, item) => sum + item.monthlySavings, 0)
 
   return (
-    <section className="space-y-6 p-6 md:p-8">
+    <section className="min-w-0 space-y-6 overflow-x-hidden p-4 sm:p-6 md:p-8 scrollbar-hidden">
       <div>
         <h1 className="text-2xl font-semibold">Idle Resources</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -63,7 +71,7 @@ export default function IdleResourcesPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 md:grid-cols-4">
+      <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
         <Select value={environment} onValueChange={setEnvironment}>
           <SelectTrigger>
             <SelectValue placeholder="Environment" />
@@ -131,8 +139,77 @@ export default function IdleResourcesPage() {
       {loading ? (
         <p className="text-sm text-muted-foreground">Scanning resource fleet for idle signals...</p>
       ) : (
-        <IdleResourceTable resources={filteredResources} />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
+          <IdleResourceTable
+            resources={filteredResources}
+            onReview={(resource, number) => setSelectedResource({ resource, number })}
+          />
+
+          <aside className="min-w-0 rounded-xl border border-border/70 bg-card p-4 scrollbar-hidden">
+            {selectedResource ? (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Selected Resource</p>
+                  <h2 className="mt-1 text-xl font-semibold">
+                    #{selectedResource.number} {selectedResource.resource.name}
+                  </h2>
+                  <p className="text-xs uppercase text-muted-foreground">
+                    {selectedResource.resource.type} · {selectedResource.resource.team} · {selectedResource.resource.environment}
+                  </p>
+                </div>
+
+                <div className="grid gap-2 text-sm">
+                  <DetailRow label="Idle Reason" value={selectedResource.resource.idleReason} />
+                  <DetailRow label="Monthly Cost" value={formatCurrency(selectedResource.resource.resource.monthlyCost)} />
+                  <DetailRow label="Potential Savings" value={formatCurrency(selectedResource.resource.monthlySavings)} highlight />
+                  <DetailRow label="Idle Days" value={`${selectedResource.resource.idleDays} days`} />
+                  <DetailRow label="Confidence" value={`${selectedResource.resource.confidence}%`} />
+                  <DetailRow label="Region" value={selectedResource.resource.resource.region} />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="capitalize">
+                    {selectedResource.resource.recommendation.replace("-", " ")}
+                  </Badge>
+                  <Badge className="bg-emerald-500/15 text-emerald-400">{selectedResource.resource.confidence}% confidence</Badge>
+                </div>
+
+                <Button className="w-full" variant="outline" onClick={() => setSelectedResource(null)}>
+                  Close details
+                </Button>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed border-border/70 p-6 text-center">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Select a resource</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use the button in the table to show full resource details here.
+                  </p>
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
       )}
     </section>
+  )
+}
+
+function DetailRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={highlight ? "mt-1 font-mono text-base font-semibold text-emerald-400" : "mt-1 text-sm text-foreground"}>
+        {value}
+      </p>
+    </div>
   )
 }
