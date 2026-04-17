@@ -3,13 +3,28 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  ChevronUp,
   BellRing,
   CircleGauge,
+  CreditCard,
+  LogOut,
   LayoutDashboard,
   PauseCircle,
   PiggyBank,
+  Settings,
   Sparkles,
 } from "lucide-react"
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import {
   Sidebar,
@@ -43,12 +58,10 @@ export function SidebarNav() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-cyan-400 text-white shadow-sm group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:rounded-lg">
-                  <CircleGauge className="size-5 group-data-[collapsible=icon]:size-4" />
-                </div>
+              <span className="text-[#a855f7] drop-shadow-[0_0_10px_rgba(168,85,247,0.45)] text-3xl" >▲</span>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold">FinOps Cloud Cost</span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">Optimization Hub</span>
+                  <span className="truncate font-semibold">CloudRoute</span>
+                  <span className="truncate text-xs text-zinc-500 ">Cost optimization </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -81,11 +94,61 @@ export function SidebarNav() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 p-3 group-data-[collapsible=icon]:p-2">
-          <p className="text-xs text-sidebar-foreground/80 group-data-[collapsible=icon]:hidden">
-            PS-004 Hack Carnival 2026
-          </p>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                  <Avatar className="size-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-linear-to-br from-cyan-500 to-violet-500 text-[10px] font-semibold text-white">
+                      CR
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-semibold">Name</span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">@userlogin</span>
+                  </div>
+                  <ChevronUp className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                align="end"
+                className="w-(--radix-popper-anchor-width) min-w-56 rounded-xl"
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
+                    <Avatar className="size-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg bg-linear-to-br from-cyan-500 to-blue-500 text-[10px] font-semibold text-white">
+                        CR
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left leading-tight">
+                      <span className="truncate font-semibold">Name</span>
+                      <span className="truncate text-xs text-muted-foreground">@userlogin</span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <Settings />
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <CreditCard />
+                    Billing
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
 
       <SidebarRail />
