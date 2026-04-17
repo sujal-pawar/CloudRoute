@@ -29,6 +29,13 @@ Set your MongoDB values in `.env.local`:
 ```text
 MONGODB_URI=your-mongodb-connection-string
 MONGODB_DB_NAME=cloudroute
+CLOUD_CREDENTIALS_KEY=your-long-random-secret
+```
+
+You can generate a secure key with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 3. Start the dev server:
