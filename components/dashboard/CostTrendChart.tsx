@@ -92,7 +92,7 @@ export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
         </Tabs>
       </CardHeader>
       <CardContent>
-        <div ref={chartContainerRef} className="h-[320px] w-full">
+        <div ref={chartContainerRef} className="h-80 w-full">
           {chartSize.width > 0 && chartSize.height > 0 ? (
             <LineChart width={chartSize.width} height={chartSize.height} data={series}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -109,7 +109,10 @@ export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value) => {
+                  const numeric = typeof value === "number" ? value : Number(value ?? 0)
+                  return formatCurrency(numeric)
+                }}
                 labelFormatter={(label, payload) => {
                   const point = payload?.[0]?.payload as TrendSeriesPoint | undefined
                   return point?.dateLabel ?? String(label)
