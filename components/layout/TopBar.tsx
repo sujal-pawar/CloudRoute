@@ -17,35 +17,14 @@ import {
 } from "@/components/ui/select"
 import { useAppStore } from "@/lib/store/useAppStore"
 
-const pageTitles: Record<string, { title: string; description: string }> = {
-  "/dashboard": {
-    title: "Dashboard",
-    description: "Live cloud spend, waste, and optimization signals.",
-  },
-  "/idle-resources": {
-    title: "Idle Resources",
-    description: "Resources burning money with near-zero usage.",
-  },
-  "/recommendations": {
-    title: "Recommendations",
-    description: "Rightsizing actions with projected savings.",
-  },
-  "/alerts": {
-    title: "Alerts",
-    description: "Threshold rules and breach history.",
-  },
-  "/anomalies": {
-    title: "Anomalies",
-    description: "Spikes that need attention.",
-  },
-  "/savings-tracker": {
-    title: "Savings Tracker",
-    description: "Projected vs realized savings over time.",
-  },
-  "/resources": {
-    title: "Resources",
-    description: "Cloud inventory across teams and environments.",
-  },
+const pageTitles: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/idle-resources": "Idle Resources",
+  "/recommendations": "Recommendations",
+  "/alerts": "Alerts",
+  "/anomalies": "Anomalies",
+  "/savings-tracker": "Savings Tracker",
+  "/resources": "Resources",
 }
 
 export function TopBar() {
@@ -56,26 +35,22 @@ export function TopBar() {
   const unreadCount = useAppStore((state) => state.unreadAlertIds.length)
   const markAlertsRead = useAppStore((state) => state.markAlertsRead)
 
-  const page = pageTitles[pathname] ?? {
-    title: "FinOps Cloud Cost Optimization",
-    description: "Track spend, waste, alerts, and savings.",
-  }
+  const pageTitle = pageTitles[pathname] ?? "CloudRoute"
 
   const isDark = resolvedTheme !== "light"
 
   return (
-    <header className="flex h-14 items-center justify-between gap-3 border-b px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between gap-3 border-b border-border/70 bg-background/80 px-4 backdrop-blur-sm md:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <SidebarTrigger className="shrink-0" />
+        <SidebarTrigger className="shrink-0 rounded-lg border border-border/70 bg-background/60" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{page.title}</p>
-          <p className="truncate text-xs text-muted-foreground">{page.description}</p>
+          <p className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">{pageTitle}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/70 p-1.5">
         <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-          <SelectTrigger size="sm" className="hidden w-45 md:flex">
+          <SelectTrigger size="sm" className="hidden w-40 border-border/70 bg-background/60 md:flex">
             <SelectValue placeholder="Select team" />
           </SelectTrigger>
           <SelectContent>
@@ -93,7 +68,7 @@ export function TopBar() {
           type="button"
           variant="outline"
           size="icon-sm"
-          className="relative"
+          className="relative border-border/70 bg-background/60"
           onClick={markAlertsRead}
         >
           <Bell className="size-4" />
@@ -108,12 +83,12 @@ export function TopBar() {
         <Button
           type="button"
           variant="outline"
-          size="sm"
-          className="gap-2"
+          size="icon-sm"
+          className="border-border/70 bg-background/60"
           onClick={() => setTheme(isDark ? "light" : "dark")}
         >
           {isDark ? <SunMedium className="size-4" /> : <Moon className="size-4" />}
-          
+          <span className="sr-only">Toggle theme</span>
         </Button>
       </div>
     </header>

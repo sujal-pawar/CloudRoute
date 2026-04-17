@@ -83,7 +83,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null)
-  const [nowMs, setNowMs] = React.useState(() => Date.now())
   const selectedTeam = useAppStore((store) => store.selectedTeam)
   const activeTeam: Team | null = selectedTeam === "all-teams" ? null : selectedTeam
 
@@ -185,24 +184,6 @@ export default function DashboardPage() {
     }
   }, [refreshDashboard])
 
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowMs(Date.now())
-    }, 1000)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [])
-
-  const secondsSinceUpdate = React.useMemo(() => {
-    if (!lastUpdated) {
-      return null
-    }
-
-    return Math.max(0, Math.floor((nowMs - lastUpdated.getTime()) / 1000))
-  }, [lastUpdated, nowMs])
-
   const filteredTrend90d = React.useMemo(() => {
     if (!activeTeam) {
       return state.trend90d
@@ -272,6 +253,21 @@ export default function DashboardPage() {
     })
   }, [activeTeam, state.breakdownTeam30d])
 
+  const trendChartData = React.useMemo(
+    () => filteredTrend90d.map((point) => ({ date: point.date, totalCost: point.totalCost })),
+    [filteredTrend90d]
+  )
+
+  const serviceBreakdownData = React.useMemo(
+    () => (activeTeam ? filteredTeamBreakdown30d : state.breakdownService30d),
+    [activeTeam, filteredTeamBreakdown30d, state.breakdownService30d]
+  )
+
+  const environmentBreakdownData = React.useMemo(
+    () => (activeTeam ? filteredTeamBreakdown30d : state.breakdownEnv30d),
+    [activeTeam, filteredTeamBreakdown30d, state.breakdownEnv30d]
+  )
+
   const kpis = React.useMemo(() => {
     const currentMonthTotal = sumTail(filteredTrend90d.map((point) => point.totalCost), 30)
     const lastMonthTotal = sumWindow(filteredTrend90d.map((point) => point.totalCost), 30, 60)
@@ -327,7 +323,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">Cloud Cost Overview</h1>
           <p className="text-sm text-muted-foreground">
             {lastUpdated
-              ? `Last updated: ${secondsSinceUpdate}s ago (${lastUpdated.toLocaleTimeString()})`
+              ? `Last updated at ${lastUpdated.toLocaleTimeString()}`
               : "Loading data..."}
           </p>
           {activeTeam ? (
@@ -386,14 +382,14 @@ export default function DashboardPage() {
           </div>
 
           <CostTrendChart
-            data={filteredTrend90d.map((point) => ({ date: point.date, totalCost: point.totalCost }))}
+            data={trendChartData}
             anomalies={filteredAnomalies}
           />
 
           <CostBreakdownChart
-            serviceData={activeTeam ? filteredTeamBreakdown30d : state.breakdownService30d}
+            serviceData={serviceBreakdownData}
             teamData={filteredTeamBreakdown30d}
-            environmentData={activeTeam ? filteredTeamBreakdown30d : state.breakdownEnv30d}
+            environmentData={environmentBreakdownData}
           />
 
           <TeamSpendTable rows={kpis.teamRows} />
@@ -412,8 +408,8 @@ function DashboardSkeleton() {
         <Skeleton className="h-28 rounded-xl" />
         <Skeleton className="h-28 rounded-xl" />
       </div>
-      <Skeleton className="h-[360px] rounded-xl" />
-      <Skeleton className="h-[360px] rounded-xl" />
+      <Skeleton className="h-90 rounded-xl" />
+      <Skeleton className="h-90 rounded-xl" />
       <Skeleton className="h-64 rounded-xl" />
     </div>
   )

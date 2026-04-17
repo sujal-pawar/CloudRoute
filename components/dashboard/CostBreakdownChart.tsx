@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -53,46 +54,12 @@ const ENV_COLORS: Record<string, string> = {
   development: "#22c55e",
 }
 
-export function CostBreakdownChart({
+export const CostBreakdownChart = React.memo(function CostBreakdownChart({
   serviceData,
   teamData,
   environmentData,
 }: CostBreakdownChartProps) {
   const [groupBy, setGroupBy] = React.useState<GroupBy>("service")
-  const chartContainerRef = React.useRef<HTMLDivElement | null>(null)
-  const [chartSize, setChartSize] = React.useState({ width: 0, height: 0 })
-
-  React.useEffect(() => {
-    const node = chartContainerRef.current
-    if (!node) {
-      return
-    }
-
-    const updateFromRect = (width: number, height: number) => {
-      setChartSize({
-        width: Math.max(0, Math.floor(width)),
-        height: Math.max(0, Math.floor(height)),
-      })
-    }
-
-    const initialRect = node.getBoundingClientRect()
-    updateFromRect(initialRect.width, initialRect.height)
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (!entry) {
-        return
-      }
-
-      updateFromRect(entry.contentRect.width, entry.contentRect.height)
-    })
-
-    observer.observe(node)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
 
   const selectedData =
     groupBy === "service" ? serviceData : groupBy === "team" ? teamData : environmentData
@@ -122,9 +89,9 @@ export function CostBreakdownChart({
         </Tabs>
       </CardHeader>
       <CardContent>
-        <div ref={chartContainerRef} className="h-[320px] w-full">
-          {chartSize.width > 0 && chartSize.height > 0 ? (
-            <BarChart width={chartSize.width} height={chartSize.height} data={chartData}>
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} minTickGap={20} />
               <YAxis
@@ -144,17 +111,18 @@ export function CostBreakdownChart({
                   key={key}
                   dataKey={key}
                   stackId="stack"
+                  isAnimationActive={false}
                   fill={resolveColor(groupBy, key)}
                   radius={key === keys[keys.length - 1] ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
             </BarChart>
-          ) : null}
+          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>
   )
-}
+})
 
 function shortDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -174,3 +142,5 @@ function resolveColor(groupBy: GroupBy, key: string): string {
 
   return ENV_COLORS[key] ?? "#64748b"
 }
+
+CostBreakdownChart.displayName = "CostBreakdownChart"

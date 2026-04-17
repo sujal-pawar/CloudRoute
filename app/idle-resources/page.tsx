@@ -68,9 +68,7 @@ export default function IdleResourcesPage() {
       return null
     }
 
-    const stillVisible = filteredResources.some(
-      (item) => item.resource.id === selectedResource.resource.resource.id
-    )
+    const stillVisible = filteredResources.some((item) => item.resource.id === selectedResource.resource.resource.id)
 
     return stillVisible ? selectedResource : null
   }, [filteredResources, selectedResource])
@@ -177,10 +175,10 @@ export default function IdleResourcesPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Selected Resource</p>
                   <h2 className="mt-1 text-xl font-semibold">
-                    #{selectedResourceForPanel.number} {selectedResourceForPanel.resource.name}
+                    #{selectedResourceForPanel.number} {selectedResourceForPanel.resource.resource.name}
                   </h2>
                   <p className="text-xs uppercase text-muted-foreground">
-                    {selectedResourceForPanel.resource.type} · {selectedResourceForPanel.resource.team} · {selectedResourceForPanel.resource.environment}
+                    {selectedResourceForPanel.resource.resource.type} · {selectedResourceForPanel.resource.resource.team} · {selectedResourceForPanel.resource.resource.environment}
                   </p>
                 </div>
 

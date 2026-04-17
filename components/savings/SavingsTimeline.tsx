@@ -79,7 +79,12 @@ export function SavingsTimeline({ entries }: SavingsTimelineProps) {
                 width={90}
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip
+                formatter={(value) => {
+                  const numeric = typeof value === "number" ? value : Number(value ?? 0)
+                  return formatCurrency(numeric)
+                }}
+              />
               <Legend />
               <Line
                 type="monotone"

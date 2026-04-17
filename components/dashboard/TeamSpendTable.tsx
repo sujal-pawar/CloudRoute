@@ -32,7 +32,7 @@ type TeamSpendTableProps = {
   rows: TeamSpendRow[]
 }
 
-export function TeamSpendTable({ rows }: TeamSpendTableProps) {
+export const TeamSpendTable = React.memo(function TeamSpendTable({ rows }: TeamSpendTableProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>("currentMonthCost")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc")
 
@@ -130,7 +130,7 @@ export function TeamSpendTable({ rows }: TeamSpendTableProps) {
       </Table>
     </div>
   )
-}
+})
 
 function SortButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -140,3 +140,5 @@ function SortButton({ label, onClick }: { label: string; onClick: () => void }) 
     </Button>
   )
 }
+
+TeamSpendTable.displayName = "TeamSpendTable"

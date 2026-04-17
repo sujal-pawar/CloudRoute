@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -34,42 +35,8 @@ type TrendSeriesPoint = {
   hasAnomaly: boolean
 }
 
-export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
+export const CostTrendChart = React.memo(function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
   const [view, setView] = React.useState<TrendView>("daily")
-  const chartContainerRef = React.useRef<HTMLDivElement | null>(null)
-  const [chartSize, setChartSize] = React.useState({ width: 0, height: 0 })
-
-  React.useEffect(() => {
-    const node = chartContainerRef.current
-    if (!node) {
-      return
-    }
-
-    const updateFromRect = (width: number, height: number) => {
-      setChartSize({
-        width: Math.max(0, Math.floor(width)),
-        height: Math.max(0, Math.floor(height)),
-      })
-    }
-
-    const initialRect = node.getBoundingClientRect()
-    updateFromRect(initialRect.width, initialRect.height)
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (!entry) {
-        return
-      }
-
-      updateFromRect(entry.contentRect.width, entry.contentRect.height)
-    })
-
-    observer.observe(node)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
 
   const anomalyDates = React.useMemo(() => {
     return new Set(anomalies.map((anomaly) => anomaly.detectedAt.split("T")[0]))
@@ -92,9 +59,9 @@ export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
         </Tabs>
       </CardHeader>
       <CardContent>
-        <div ref={chartContainerRef} className="h-80 w-full">
-          {chartSize.width > 0 && chartSize.height > 0 ? (
-            <LineChart width={chartSize.width} height={chartSize.height} data={series}>
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={series}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 dataKey="label"
@@ -123,6 +90,7 @@ export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
                 dataKey="totalCost"
                 stroke="#3b82f6"
                 strokeWidth={2.5}
+                isAnimationActive={false}
                 dot={(dotProps) => {
                   const payload = dotProps.payload as TrendSeriesPoint
                   return payload.hasAnomaly ? (
@@ -146,12 +114,12 @@ export function CostTrendChart({ data, anomalies }: CostTrendChartProps) {
                 activeDot={{ r: 5 }}
               />
             </LineChart>
-          ) : null}
+          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>
   )
-}
+})
 
 function buildTrendSeries(
   data: CostPoint[],
@@ -235,3 +203,5 @@ function monthLabel(monthKey: string): string {
 function round2(value: number): number {
   return Math.round(value * 100) / 100
 }
+
+CostTrendChart.displayName = "CostTrendChart"
