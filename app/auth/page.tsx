@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
+import { PublicNavbar } from "@/components/layout/PublicNavbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DEMO_PASSWORD, DEMO_USERNAME } from "@/lib/demo-credentials"
 
 type AuthMode = "login" | "signup"
 
@@ -37,14 +39,28 @@ export default function AuthPage() {
     const syncNextPath = window.setTimeout(() => {
       const params = new URLSearchParams(window.location.search)
       const next = params.get("next")
+      const tab = params.get("tab")
 
       if (next && next.startsWith("/")) {
         setNextPath(next)
+      }
+
+      if (tab === "login" || tab === "signup") {
+        setMode(tab)
       }
     }, 0)
 
     return () => window.clearTimeout(syncNextPath)
   }, [])
+
+  function applyDemoCredentials() {
+    setMode("login")
+    setFormState((prev) => ({
+      ...prev,
+      username: DEMO_USERNAME,
+      password: DEMO_PASSWORD,
+    }))
+  }
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -100,107 +116,85 @@ export default function AuthPage() {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.06),transparent)] opacity-25" />
 
       <div className="relative mx-auto w-full max-w-6xl">
-        <header className="sticky top-4 z-20 mb-8 flex items-center justify-between rounded-2xl border border-white/15 bg-slate-950/55 px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <span className="text-xl text-cyan-300">▲</span>
-            <div>
-              <p className="text-sm font-semibold tracking-wide">CloudRoute</p>
-              <p className="text-xs text-white/70">Secure access</p>
-            </div>
-          </div>
-
-          <nav className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              className="h-8 text-white/80 hover:bg-white/10 hover:text-white"
-            >
-              <Link href="/">Home</Link>
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "login" ? "default" : "ghost"}
-              className={
-                mode === "login"
-                  ? "h-8 bg-cyan-400 px-4 text-slate-950 hover:bg-cyan-300"
-                  : "h-8 text-white/80 hover:bg-white/10 hover:text-white"
-              }
-              onClick={() => setMode("login")}
-            >
-              Login
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "signup" ? "default" : "ghost"}
-              className={
-                mode === "signup"
-                  ? "h-8 bg-cyan-400 px-4 text-slate-950 hover:bg-cyan-300"
-                  : "h-8 text-white/80 hover:bg-white/10 hover:text-white"
-              }
-              onClick={() => setMode("signup")}
-            >
-              Sign up
-            </Button>
-          </nav>
-        </header>
+        <PublicNavbar active={mode} onAuthModeChange={setMode} />
 
         <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-xl space-y-5">
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/80">
-            <ShieldCheck className="size-3.5" />
-            CloudRoute Access
-          </p>
-          <h1 className="font-heading text-3xl leading-tight font-semibold sm:text-4xl lg:text-5xl">
-            Secure sign in for your cloud cost command center.
-          </h1>
-          <p className="max-w-lg text-sm text-white/75 sm:text-base">
-            Use your username and password to access dashboards, anomaly alerts,
-            and team optimization workflows.
-          </p>
-          <div className="grid max-w-lg grid-cols-2 gap-3 text-sm text-white/75">
-            <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
-              <p className="font-medium text-cyan-100">Fast onboarding</p>
-              <p className="mt-1 text-xs text-white/65">Create account and access insights in under a minute.</p>
+          <div className="max-w-xl space-y-5">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/80">
+              <ShieldCheck className="size-3.5" />
+              CloudRoute Access
+            </p>
+            <h1 className="font-heading text-3xl leading-tight font-semibold sm:text-4xl lg:text-5xl">
+              Secure sign in for your cloud cost command center.
+            </h1>
+            <p className="max-w-lg text-sm text-white/75 sm:text-base">
+              Use your username and password to access dashboards, anomaly alerts,
+              and team optimization workflows.
+            </p>
+            <div className="grid max-w-lg grid-cols-2 gap-3 text-sm text-white/75">
+              <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+                <p className="font-medium text-cyan-100">Fast onboarding</p>
+                <p className="mt-1 text-xs text-white/65">Create account and access insights in under a minute.</p>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+                <p className="font-medium text-cyan-100">Safe sessions</p>
+                <p className="mt-1 text-xs text-white/65">Cookie-based auth with server-managed sessions.</p>
+              </div>
             </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
-              <p className="font-medium text-cyan-100">Safe sessions</p>
-              <p className="mt-1 text-xs text-white/65">Cookie-based auth with server-managed sessions.</p>
+            <div className="rounded-xl border border-cyan-300/25 bg-cyan-400/10 p-3 text-sm text-cyan-50">
+              <p className="font-medium">Demo credentials</p>
+              <p className="mt-1 text-xs text-cyan-100/85">Use this account to open sample dashboard data instantly.</p>
+              <div className="mt-2 space-y-1 text-xs">
+                <p>
+                  Username: <span className="font-semibold">{DEMO_USERNAME}</span>
+                </p>
+                <p>
+                  Password: <span className="font-semibold">{DEMO_PASSWORD}</span>
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-3 h-8 bg-cyan-300 px-3 text-xs font-semibold text-slate-950 hover:bg-cyan-200"
+                onClick={applyDemoCredentials}
+              >
+                Use demo credentials
+              </Button>
             </div>
-          </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-cyan-200 transition hover:text-cyan-100"
-          >
-            <ArrowLeft className="size-4" />
-            Back to landing page
-          </Link>
-        </div>
-
-        <Card className="w-full max-w-md border border-white/15 bg-slate-950/45 text-white shadow-2xl backdrop-blur-xl">
-          <CardHeader className="space-y-3">
-            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
-              <Sparkles className="size-3" />
-              Team workspace
-            </div>
-            <CardTitle className="text-xl">Sign in to CloudRoute</CardTitle>
-            <CardDescription className="text-white/75">
-              Login or create an account to continue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs
-              value={mode}
-              onValueChange={(value) => setMode(value as AuthMode)}
-              className="w-full"
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm text-cyan-200 transition hover:text-cyan-100"
             >
-              <TabsList className="grid w-full grid-cols-2 bg-white/10 p-1">
-                <TabsTrigger value="login" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
-                  Login
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
-                  Sign up
-                </TabsTrigger>
-              </TabsList>
+              <ArrowLeft className="size-4" />
+              Back to landing page
+            </Link>
+          </div>
+
+          <Card className="w-full max-w-md border border-white/15 bg-slate-950/45 text-white shadow-2xl backdrop-blur-xl">
+            <CardHeader className="space-y-3">
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+                <Sparkles className="size-3" />
+                Team workspace
+              </div>
+              <CardTitle className="text-xl">Sign in to CloudRoute</CardTitle>
+              <CardDescription className="text-white/75">
+                Login or create an account to continue.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs
+                value={mode}
+                onValueChange={(value) => setMode(value as AuthMode)}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2 bg-white/10 p-1">
+                  <TabsTrigger value="login" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
+                    Login
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="data-active:bg-cyan-400/95 data-active:text-slate-950">
+                    Sign up
+                  </TabsTrigger>
+                </TabsList>
 
               <TabsContent value="login" className="mt-5">
                 <form className="space-y-4" onSubmit={submitForm}>
@@ -316,10 +310,10 @@ export default function AuthPage() {
                   </Button>
                 </form>
               </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

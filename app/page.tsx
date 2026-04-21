@@ -1,35 +1,12 @@
 import Link from "next/link"
 import {
   ArrowRight,
-  ChartNoAxesCombined,
-  ShieldCheck,
   Sparkles,
-  Zap,
 } from "lucide-react"
 
 import Prism from "@/components/Prism"
+import { PublicNavbar } from "@/components/layout/PublicNavbar"
 import { Button } from "@/components/ui/button"
-
-const highlights = [
-  {
-    title: "Real-time Cost Signals",
-    description:
-      "Spot spend spikes as they happen with anomaly overlays and team-level trend tracking.",
-    icon: ChartNoAxesCombined,
-  },
-  {
-    title: "Guardrails That Trigger",
-    description:
-      "Create budget alerts and threshold rules so finance and engineering get notified before overruns.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Actionable Optimization",
-    description:
-      "Turn recommendations into measurable savings with progress timelines and impact summaries.",
-    icon: Zap,
-  },
-]
 
 export default function HomePage() {
   return (
@@ -51,31 +28,7 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.08)_0%,transparent_35%,transparent_70%,rgba(255,255,255,0.06)_100%)]" />
 
       <section className="relative mx-auto flex w-full  flex-col px-6 py-6 sm:px-10 lg:px-14 lg:py-8">
-        <header className="sticky top-4 z-20 flex items-center justify-between rounded-2xl border border-blue-300/15 bg-black px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl text-blue-300">▲</span>
-            <div>
-              <h1 className="text-xl font-semibold tracking-wide">CloudRoute</h1>
-
-            </div>
-          </div>
-
-          <nav className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              className="h-8 text-white/80 hover:bg-white/10 hover:text-white"
-            >
-              <Link href="/auth?tab=login">Login</Link>
-            </Button>
-            <Button
-              asChild
-              className="h-8 bg-blue-400 px-4 text-slate-950 hover:bg-cyan-300"
-            >
-              <Link href="/auth?tab=signup">Sign up</Link>
-            </Button>
-          </nav>
-        </header>
+        <PublicNavbar active="home" />
 
         <div className="flex flex-1 items-center justify-center">
           <div className="mx-auto flex max-w-3xl flex-col items-center text-center space-y-6 mt-16">

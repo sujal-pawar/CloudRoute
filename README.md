@@ -69,6 +69,9 @@ The home route is a public landing page. Authentication is available at `/auth`.
 - The debug endpoint is available at `/api/debug` and returns summary + source datasets.
 - Alerts are evaluated on load so pre-breached demo rules appear immediately.
 - Savings are persisted in module-level server state during the current server session.
+- Demo login credentials for sample data:
+	- Username: `root`
+	- Password: `123123`
 
 ## API Overview
 

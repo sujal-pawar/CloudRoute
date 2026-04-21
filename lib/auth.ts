@@ -9,6 +9,7 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/auth-constants"
+import { DEMO_NAME, DEMO_PASSWORD, DEMO_USERNAME } from "@/lib/demo-credentials"
 import { getDatabase } from "@/lib/db"
 import {
   decryptCloudCredentials,
@@ -49,6 +50,7 @@ export interface AuthSessionContext {
 }
 
 let indexesReady = false
+let demoUserReady = false
 
 function normalizeUsername(username: string) {
   return username.trim().toLowerCase()
@@ -96,6 +98,41 @@ async function ensureIndexes() {
   indexesReady = true
 }
 
+async function ensureDemoUser() {
+  if (demoUserReady) {
+    return
+  }
+
+  await ensureIndexes()
+
+  const db = await getDatabase()
+  const users = db.collection<DbUserDocument>(USERS_COLLECTION)
+  const normalizedDemoUsername = normalizeUsername(DEMO_USERNAME)
+
+  const existingUser = await users.findOne({ username: normalizedDemoUsername })
+
+  if (!existingUser) {
+    const passwordHash = await hash(DEMO_PASSWORD, 10)
+
+    await users
+      .insertOne({
+        username: normalizedDemoUsername,
+        name: DEMO_NAME,
+        passwordHash,
+        createdAt: new Date(),
+      })
+      .catch((error: unknown) => {
+        if (error instanceof MongoServerError && error.code === 11000) {
+          return
+        }
+
+        throw error
+      })
+  }
+
+  demoUserReady = true
+}
+
 export async function createUser(input: {
   username: string
   password: string
@@ -134,6 +171,7 @@ export async function createUser(input: {
 }
 
 export async function verifyCredentials(username: string, password: string) {
+  await ensureDemoUser()
   await ensureIndexes()
 
   const db = await getDatabase()
