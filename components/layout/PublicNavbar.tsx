@@ -23,8 +23,7 @@ export function PublicNavbar({
       <div className="flex items-center gap-2">
         <span className="text-xl text-cyan-300">▲</span>
         <div>
-          <p className="text-sm font-semibold tracking-wide text-white">CloudRoute</p>
-          <p className="text-xs text-white/70">Cloud Cost Command Center</p>
+          <h1 className="text-xl font-semibold tracking-wide text-white">CloudRoute</h1>
         </div>
       </div>
 
